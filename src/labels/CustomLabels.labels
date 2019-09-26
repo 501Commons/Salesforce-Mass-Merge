@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Merge_PageMessagesConfirm</fullName>
+        <categories>PageMessages</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Merge_PageMessagesConfirm</shortDescription>
+        <value>Success</value>
+    </labels>
+    <labels>
+        <fullName>Merge_PageMessagesError</fullName>
+        <categories>PageMessages</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Merge_PageMessagesError</shortDescription>
+        <value>Error</value>
+    </labels>
+    <labels>
+        <fullName>Merge_PageMessagesFatal</fullName>
+        <categories>PageMessages</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Merge_PageMessagesFatal</shortDescription>
+        <value>Error</value>
+    </labels>
+    <labels>
+        <fullName>Merge_PageMessagesWarning</fullName>
+        <categories>PageMessages</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Merge_PageMessagesWarning</shortDescription>
+        <value>Warning</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelButtonCancel</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>label for the Cancel button used on several pages.</shortDescription>
+        <value>Cancel</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelButtonClose</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>label for the Close button on various pages</shortDescription>
+        <value>Close</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelButtonSave</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>The label for the Save button used on several pages.</shortDescription>
+        <value>Save</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelButtonSaveAndClose</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>label for the Save and Close button used on several pages</shortDescription>
+        <value>Save &amp; Close</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeContactHelp</fullName>
+        <categories>MassMergeContacts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>help text for the Mass Merge Contacts page</shortDescription>
+        <value>Choose the Contact then the page will display any existing contact merge records.  Update all rows as appropriate, and then click Save.</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeContactTitle</fullName>
+        <categories>MassMergeContacts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>title for the Mass Merge page</shortDescription>
+        <value>Mass Merge Contacts</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeErrorOnSave</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>error message when Mass Merge Accounts save fails.</shortDescription>
+        <value>Errors were encountered trying to save the Requests.</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeFilterConfidenceFrom</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>label for the merge confidence filter From field.</shortDescription>
+        <value>Merge Confidence From %</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeFilterConfidenceTo</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>label for the merge confidence filter section To field.</shortDescription>
+        <value>To %</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeHelp</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>help text for the Mass Merge Accounts page</shortDescription>
+        <value>Choose the Household then the page will display any existing account merge records.  Update all rows as appropriate, and then click Save.</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeSaveSuccess</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>message displayed when Mass Merge saves successfully.</shortDescription>
+        <value>records have been saved.</value>
+    </labels>
+    <labels>
+        <fullName>Merge_labelMassMergeTitle</fullName>
+        <categories>MassMergeAccounts</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>title for the Mass Merge page</shortDescription>
+        <value>Mass Merge Accounts</value>
+    </labels>
+</CustomLabels>

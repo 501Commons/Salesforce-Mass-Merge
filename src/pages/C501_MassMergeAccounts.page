@@ -1,0 +1,186 @@
+<!-- 
+    Copyright (c) 2016, Salesforce.org
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+    
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of Salesforce.org nor the names of
+      its contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+ 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+    COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
+    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+    POSSIBILITY OF SUCH DAMAGE.
+-->  
+ 
+<apex:page controller="C501_CTRL_MassMergeAccounts" title="{!$Label.Merge_labelMassMergeTitle}" tabStyle="Account" standardStylesheets="true" sidebar="false">
+    <apex:stylesheet value="{!URLFOR($Resource.sfdo213, '/assets/styles/salesforce-lightning-design-system-vf.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.v4sStaticResources, '/v4s_slds/v4s-common.css')}" />
+
+    <style>
+        .myTD span.dateFormat {
+            display: none !important;
+        }
+        .myTD.datetime,
+        .myTD.textarea {
+            min-width: 200px;
+        }
+        .myTD.picklist,
+        .myTD.multipicklist,
+        .myTD.reference,
+        .myTD.date {
+            min-width: 170px;
+        }
+    </style>
+
+    <script type="text/javascript">
+        // hack that prevents Salesforce from always putting focus
+        // on the first date field, which pops up the ugly calendar control!
+        window.onload = function() {}
+    </script>
+
+    <apex:form id="vfform">
+        <c:C501_UTIL_NavigateBack recordId="{!idRedirect}" redirect="{!redirect}"/>
+        <div class="sfdo213">
+            <!-- PAGE SPINNER -->
+            <apex:actionStatus id="retrieveStatus" 
+                onstart="document.getElementById('divLoading').style.display='block';"
+                onstop="document.getElementById('divLoading').style.display='none';"/>
+            <div class="slds-spinner_container" style="z-index:999;position:fixed;display:none;" id="divLoading">
+                <div class="slds-spinner--brand slds-spinner slds-spinner--medium" style="position:fixed;top:30%;" aria-hidden="false" role="alert">
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+            <!-- PAGE HEADER -->
+            <div class="slds-page-header" role="banner">
+                <div class="slds-grid">
+                    <div class="slds-col--padded">
+                        <h1 class="slds-page-header__title slds-m-right--small slds-truncate slds-align-middle">{!$Label.Merge_labelMassMergeTitle}</h1>
+                    </div>        
+    
+                    <div class="slds-col--padded slds-no-flex slds-align-middle">
+                        <div class="slds-button-group" role="group">
+                            <apex:commandButton styleClass="slds-button slds-button--neutral" action="{!Cancel}" value="{!IF(ISNULL(strSaveResults), $Label.Merge_labelButtonCancel, $Label.Merge_labelButtonClose)}" immediate="true" reRender="vfform"/> 
+                            <apex:commandButton styleClass="slds-button slds-button--brand" action="{!SaveAccounts}" value="{!$Label.Merge_labelButtonSave}" id="btnSave" immediate="false" reRender="vfform,ddlAccounts,tblAccounts"/>
+                            <apex:commandButton styleClass="slds-button slds-button--neutral" action="{!SaveAndCloseAccounts}" value="{!$Label.Merge_labelButtonSaveAndClose}" id="btnSaveClose" immediate="false" reRender="vfform"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /PAGE HEADER -->
+            <c:C501_UTIL_PageMessages />
+            <p class="slds-p-around--medium"><apex:outputText value="{!$Label.Merge_labelMassMergeHelp}" style="font-style:italic" /></p>
+            <fieldset class="slds-form">
+                <div class="slds-grid">
+                    <div class="slds-col--padded slds-form-element slds-size--1-of-3">
+                        <apex:outputLabel for="ddlAccounts" styleClass="slds-form-element__label" >
+                            Household
+                        </apex:outputLabel>
+                        <apex:selectList id="ddlAccounts" value="{!objectFilter.Id}" required="false" size="1" styleClass="slds-select" disabled="{!listSOAccounts.size=1}">
+                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeAccount}" />
+                            <apex:selectOptions value="{!listSOAccounts}" /> 
+                        </apex:selectList>
+                    </div>
+                    <div class="slds-col--padded slds-form-element slds-size--1-of-3">
+                        <apex:outputLabel for="ddlRules" styleClass="slds-form-element__label" >
+                            Rule
+                        </apex:outputLabel>
+                        <apex:selectList id="ddlRules" value="{!objectFilter.C501_Merge_Rule__c}" required="false" size="1" styleClass="slds-select" disabled="{!listSORules.size=1}">
+                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeRule}" />
+                            <apex:selectOptions value="{!listSORules}" /> 
+                        </apex:selectList>
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset class="slds-form slds-m-top--small slds-m-bottom--large">
+                <div class="slds-grid">
+                    <div class="slds-col--padded slds-size--1-of-3 slds-form-element">
+                        <apex:outputLabel for="fldConfidenceFrom" styleClass="slds-form-element__label" >
+                            {!$Label.Merge_labelMassMergeFilterConfidenceFrom}
+                        </apex:outputLabel>
+                        <apex:inputField id="fldConfidenceFrom" required="false" value="{!objectFilter.C501_Merge_Confidence_From__c}" label="" styleClass="slds-input" >
+                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeMergeConfidence}" />
+                        </apex:inputField>
+                    </div>
+                    <div class="slds-col--padded slds-size--1-of-3 slds-form-element">
+                        <apex:outputLabel for="fldConfidenceTo" styleClass="slds-form-element__label" >
+                            {!$Label.Merge_labelMassMergeFilterConfidenceTo}
+                        </apex:outputLabel>
+                        <apex:inputField id="fldConfidenceTo" required="false" value="{!objectFilter.C501_Merge_Confidence_To__c}" label="" styleClass="slds-input" >
+                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeMergeConfidence}" />
+                        </apex:inputField>
+                    </div>
+                    <div class="slds-col--padded slds-size--1-of-3"/>
+                </div> 
+            </fieldset>   
+            <apex:dataTable value="{!listAccounts}" var="account" id="tblAccounts" 
+                            styleClass="slds-table slds-table--compact slds-table--bordered"
+                            headerClass="slds-text-heading--label slds-theme--shade" style="width:100%" >                 
+                            
+                <apex:column styleClass="myTD reference" >
+                    <apex:facet name="header">Action</apex:facet>
+                    <apex:inputField value="{!account.C501_Merge_Action__c}" styleClass="picklist" required="false" >
+                    </apex:inputField>
+                </apex:column> 
+
+                <apex:column styleClass="myTD reference" >
+                    <apex:facet name="header">Account</apex:facet>
+                    <apex:outputLink value="/{!account.Id}">Go To Account</apex:outputLink>
+                </apex:column> 
+
+                <!-- Add FieldSet Fields -->
+                <apex:repeat value="{!$ObjectType.Account.FieldSets.MassMergeAccounts}" var="f" >
+                    <apex:column style="width:50px" styleClass="myTD {!f.Type} {!IF($ObjectType['Account'].fields[f].dependentPicklist,
+                                                IF(f.Type == 'picklist', 'dependentPicklistFixup', 'dependentMultiPicklistFixup'),'')}" >
+                        <apex:facet name="header">{!f.Label + IF(f.DBRequired, ' *', '')}</apex:facet>
+
+                        <apex:outputField value="{!account[f]}" 
+                                    styleClass="{!CASE(f.Type, 
+                                                    'reference', 'lookupOutput', 
+                                                    'picklist', 'slds-select',
+                                                    'multipicklist', 'slds-select multipicklistSLDSFixup',
+                                                    'boolean', 'slds-checkbox',
+                                                    'textarea', 'slds-textarea',
+                                                    'slds-input')}"
+                                    id="inputX"/>
+                    </apex:column>
+                </apex:repeat>
+            </apex:dataTable>
+
+            <script type="text/javascript">
+                function fixSearchIMG() {
+                    var input = document.getElementsByClassName("lookupInput");
+                    var inputLen = input.length;
+                    for (i = 0; i < inputLen; i++) {
+                        if (typeof(input[i]) !== 'undefined' && input[i].tagName === "INPUT") {
+                            input[i].style.visibility = "";
+                            var lkSpan = input[i].parentElement;
+                            var lkLink = lkSpan.querySelector("a");
+                            lkLink.style.visibility = "";
+                            lkLink.className = "";
+                            lkLink.innerHTML = "<svg aria-hidden=\"true\" class=\"slds-icon slds-input__icon slds-icon--x-small slds-icon-text-default\" viewBox=\"0 0 24 24\"><path  d=\"M22.9 20.9l-6.2-6.1c1.3-1.8 1.9-4 1.6-6.4-.6-3.9-3.8-7.1-7.8-7.4C5 .4.4 5 1 10.5c.3 4 3.5 7.3 7.4 7.8 2.4.3 4.6-.3 6.4-1.5l6.1 6.1c.3.3.7.3 1 0l.9-1c.3-.3.3-.7.1-1zM3.7 9.6c0-3.2 2.7-5.9 5.9-5.9s6 2.7 6 5.9-2.7 6-6 6-5.9-2.6-5.9-6z\"></path></svg>";
+                        }
+                    }
+                }
+                fixSearchIMG();
+            </script>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+        </div> <!-- slds -->    
+    </apex:form>
+</apex:page>
