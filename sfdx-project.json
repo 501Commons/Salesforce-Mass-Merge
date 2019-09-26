@@ -1,1 +1,1 @@
-{"packageDirectories": [{"path": "force-app", "default": true}], "namespace": "c501mm", "sourceApiVersion": "46.0"}
+{"packageDirectories": [{"path": "src", "default": true}], "namespace": "c501mm", "sourceApiVersion": "45.0"}
