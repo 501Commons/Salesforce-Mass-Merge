@@ -534,7 +534,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge update fields exception: ' + String.valueOf(e.getMessage()));
         }
 
-        c501mm.C501_MassMerge_SharedCode.OutputDebugLogFlush();
+        C501_MassMerge_SharedCode.OutputDebugLogFlush();
     }
 
     public void ObjectsMerge(Account masterObject, List<Account> duplicateObjects) {
