@@ -416,8 +416,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             if (fResult.isPermissionable() && fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
-                if (strSoql.toLowerCase().contains('gender__c')) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field: ' + fieldName + ' strSoql: ' + strSoql);
+                if (fieldName.toLowerCase().contains('gender__c')) {
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -426,6 +426,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 if (string.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
                     continue;
                 }
 
@@ -434,6 +435,9 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 } else {
                     standardFieldMap.put(fieldName, fResult);
                 }
+            }
+            else {
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
             }
         }
 
