@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public with sharing class C501_MassMerge_Fx_Base {
+public without sharing class C501_MassMerge_Fx_Base {
     public C501_MassMerge_Fx_Base() {
 
     }

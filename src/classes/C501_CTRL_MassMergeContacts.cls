@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public virtual with sharing class C501_CTRL_MassMergeContacts {
+public virtual without sharing class C501_CTRL_MassMergeContacts {
 
     private C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact;
     private List<String> listStrFields;
@@ -474,17 +474,22 @@ public virtual with sharing class C501_CTRL_MassMergeContacts {
                 }
             }
 
+            Integer mergesIgnoreSize = 0;
             if (!listContactsMergesIgnore.values().isEmpty()) {
+
+                mergesIgnoreSize = listContactsMergesIgnore.size();
                 update listContactsMergesIgnore.values();
             }
 
+            Integer mergesMasterSize = 0;
             if (!listContactsMergesMaster.values().isEmpty()) {
 
+                mergesMasterSize = listContactsMergesMaster.size();
                 update listContactsMergesMaster.values();
                 c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), listContactsMergesMaster.values(), true);
             }
 
-            strSaveResults = ( (listContactsMergesIgnore.values().size() + listContactsMergesMaster.values().size()) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
+            strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
             ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.CONFIRM, strSaveResults));
 
             // successful save, so clear out dirty list

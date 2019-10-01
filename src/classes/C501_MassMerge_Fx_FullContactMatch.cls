@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public with sharing class C501_MassMerge_Fx_FullContactMatch {
+public without sharing class C501_MassMerge_Fx_FullContactMatch {
     public C501_MassMerge_Fx_FullContactMatch() {
 
     }

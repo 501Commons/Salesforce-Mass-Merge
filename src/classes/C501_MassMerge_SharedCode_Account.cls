@@ -38,7 +38,7 @@
 //  This is a workaround for Generic classes since <T> - Templating not supported in Apex
 //
 
-public with sharing class C501_MassMerge_SharedCode_Account { 
+public without sharing class C501_MassMerge_SharedCode_Account { 
 
     public class C501_MassMerge_SharedCode_AccountException extends Exception {}
 
@@ -111,6 +111,10 @@ public with sharing class C501_MassMerge_SharedCode_Account {
 
     public void InsertObjectMergeCandidates(C501_Merge_Metric__c mergeMetric, List<C501_Account_Merge__c> mergeObjects) {
 
+        if (mergeObjects == null || mergeObjects.isEmpty()) {
+            return;
+        }
+
         //
 		// Perform all DML (Data Manipulation Language) calls (insert, update, merge, delete, restore) outside of loop to avoid Salesforce Governor Limits: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_gov_limits.htm
         //
@@ -118,7 +122,7 @@ public with sharing class C501_MassMerge_SharedCode_Account {
         String mergeMetricName = mergeMetric.Name;
 
         Set<String> mergeObjectsExisting = new Set<String>();
-        List<C501_Account_Merge__c> invalidMerges = new List<C501_Account_Merge__c>();
+        List<C501_Account_Merge__c> deleteAccountMerges = new List<C501_Account_Merge__c>();
 
         Boolean isSandbox = false;
         List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
@@ -135,27 +139,28 @@ public with sharing class C501_MassMerge_SharedCode_Account {
 
             if (mergeObject.Account__c == null || mergeObject.Merge_Target_Account__c == null) {
 
-                invalidMerges.add(mergeObject);
+                deleteAccountMerges.add(mergeObject);
                 continue;
             }
 
             if (mergeObject.Account__r.IsDeleted) {
 
-                invalidMerges.add(mergeObject);
+                deleteAccountMerges.add(mergeObject);
                 continue;
             }
 
             if (mergeObject.Merge_Target_Account__r.IsDeleted) {
 
-                invalidMerges.add(mergeObject);
+                deleteAccountMerges.add(mergeObject);
                 continue;
             }
 
             mergeObjectsExisting.add(mergeObject.Unique_Id__c);
         }
 
-        if (!invalidMerges.isEmpty()) {
-            delete invalidMerges;
+        if (!deleteAccountMerges.isEmpty()) {
+           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
+            delete deleteAccountMerges;
         }
 
 		if (mergeObjects <> null && !mergeObjects.isEmpty()) {
@@ -208,7 +213,7 @@ public with sharing class C501_MassMerge_SharedCode_Account {
 
         String mergeMetricName = mergeMetric.Name;
 
-        List<C501_Account_Merge__c> invalidMerges = new List<C501_Account_Merge__c>();
+        List<C501_Account_Merge__c> deleteAccountMerges = new List<C501_Account_Merge__c>();
         List<C501_Account_Merge__c> pendingMerges = new List<C501_Account_Merge__c>();
         List<C501_Account_Merge__c> pendingAutoMerges = new List<C501_Account_Merge__c>();
 
@@ -222,15 +227,14 @@ public with sharing class C501_MassMerge_SharedCode_Account {
         for(C501_Account_Merge__c mergeObject : Database.Query(strSoql)) {
 
             if (mergeObject.Account__c == null || mergeObject.Merge_Target_Account__c == null ||
-                mergeObject.Account__r.IsDeleted || mergeObject.Merge_Target_Account__r.IsDeleted ||
-                String.isBlank(mergeObject.Account__r.C501_Household_Id__c) || String.isBlank(mergeObject.Merge_Target_Account__r.C501_Household_Id__c)) {
+                mergeObject.Account__r.IsDeleted || mergeObject.Merge_Target_Account__r.IsDeleted) {
 
-                invalidMerges.add(mergeObject);
+                deleteAccountMerges.add(mergeObject);
                 continue;
             }
 
-            AccountHouseholdMap.put(mergeObject.Account__c, mergeObject.Account__r.C501_Household_Id__c);
-            AccountHouseholdMap.put(mergeObject.Merge_Target_Account__c, mergeObject.Merge_Target_Account__r.C501_Household_Id__c);
+            AccountHouseholdMap.put(mergeObject.Account__c, C501_MassMerge_SharedCode.GetMergeAccountHouseholdId(mergeObject));
+            AccountHouseholdMap.put(mergeObject.Merge_Target_Account__c, C501_MassMerge_SharedCode.GetMergeTargetAccountHouseholdId(mergeObject));
 
             if (mergeObject.Merge_Action__c == 'Master') {
                 pendingMerges.add(mergeObject);
@@ -240,8 +244,9 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             }
         }
 
-        if (!invalidMerges.isEmpty()) {
-            delete invalidMerges;
+        if (!deleteAccountMerges.isEmpty()) {
+           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
+            delete deleteAccountMerges;
         }
 
         // Check for batch queued merges
@@ -281,27 +286,27 @@ public with sharing class C501_MassMerge_SharedCode_Account {
         }
 
         Set<Id> objectsProcessed = new Set<Id>();
-        List<C501_Account_Merge__c> deleteMergeCandidates = new List<C501_Account_Merge__c>();
+        List<C501_Account_Merge__c> deleteAccountMerges = new List<C501_Account_Merge__c>();
         for (C501_Account_Merge__c mergeCandidate : objectMerges) {
 
             // Check Account and Target Account valid
             if (String.isBlank(mergeCandidate.Account__c) || String.isBlank(mergeCandidate.Merge_Target_Account__c)) {
 
-                deleteMergeCandidates.add(mergeCandidate);
+                deleteAccountMerges.add(mergeCandidate);
                 continue;
             }
 
             // Check Account and Target Account same Id
             if (mergeCandidate.Account__c == mergeCandidate.Merge_Target_Account__c) {
 
-                deleteMergeCandidates.add(mergeCandidate);
+                deleteAccountMerges.add(mergeCandidate);
                 continue;
             }
 
             // Check whether Account or Target Account Id merge already attempted
             if (objectsProcessed.contains(mergeCandidate.Account__c) || objectsProcessed.contains(mergeCandidate.Merge_Target_Account__c)) {
 
-                deleteMergeCandidates.add(mergeCandidate);
+                deleteAccountMerges.add(mergeCandidate);
                 continue;
             }
 
@@ -337,6 +342,8 @@ public with sharing class C501_MassMerge_SharedCode_Account {
 
             if (batchMerge) {
 
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
+
                 if (remainingFlexQueueJobs-- <= 0) {
                     break;
                 }
@@ -353,6 +360,8 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             }
             else {
 
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
+
                 ObjectsMerge( 
                     new Account(
                         Id = mergeCandidate.Account__c
@@ -367,8 +376,9 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             }
         }
 
-        if (!deleteMergeCandidates.isEmpty()) {
-            delete deleteMergeCandidates;
+        if (!deleteAccountMerges.isEmpty()) {
+           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Account Merges: ' + deleteAccountMerges);
+            delete deleteAccountMerges;
         }
     }
 
@@ -379,17 +389,19 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             mergeCandidates.add(objectItem.Id);
         }
 
+        C501_MassMerge_SharedCode.OutputDebugLogClear();
+
         Map<String, Schema.SObjectField> objectFields = Schema.SObjectType.Account.fields.getMap();
         Map<String, Schema.DescribeFieldResult> standardFieldMap = new Map<String, Schema.DescribeFieldResult>();
         Map<String, Schema.DescribeFieldResult> customFieldMap = new Map<String, Schema.DescribeFieldResult>();
-        
+
         // Construct the query string
         String strSoql = 'Select ';
         for (String fieldName : objectFields.keySet()) {
 
             Schema.SObjectField f = objectFields.get(fieldName);
             Schema.DescribeFieldResult fResult = f.getDescribe();
-            
+
             // Ignore fields that have an identical API name as an npsp prefixed field
             // This is due to a bug in dynamic SOQL, which causes querying for two real fields, 
             // e.g. npsp__foo__c and foo__c, to throw a duplicate field selected error.
@@ -401,7 +413,13 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             }
 */
             // Only include the fields which are updateable and accessible and not hidden, unique, or externalid
-            if (fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
+            if (fResult.isPermissionable() && fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
+
+                // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
+                if (strSoql.toLowerCase().contains('gender__c')) {
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field: ' + fieldName + ' strSoql: ' + strSoql);
+                    continue;
+                }
 
                 // If the field is type lookup, then ignore in the merge fields because is handled during the object merge
                 string relName = fResult.getRelationshipName();
@@ -420,18 +438,16 @@ public with sharing class C501_MassMerge_SharedCode_Account {
         }
 
         strSoql += ' Id from Account where Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeCandidates);
-        //System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - The Account query is: ' + query);
         
         List<Account> objectList;
         try {
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsFieldMerge strSoql: ' + strSoql);
-
             objectList = Database.query(strSoql); // Query the records
 
             // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
             if (objectList == null || objectList.size() != mergeCandidates.size()) {
 
-                System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to return expected number of objects');
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to return expected number of objects');
+
                 return;
             }
 
@@ -448,18 +464,19 @@ public with sharing class C501_MassMerge_SharedCode_Account {
                 }
 
                 for (String fieldName :standardFieldMap.keySet()) {
+
                     if ( (masterRecord.get(fieldName) == null || String.isBlank(String.valueOf(masterRecord.get(fieldName)))) &&
                         objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName)))) {
 
                         try{
                             masterRecord.put(fieldName, objectItem.get(fieldName));
                         } catch (Exception e) {
-                            System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                         }
                     }
                     else if (objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName))) &&
                         String.valueOf(masterRecord.get(fieldName)) <> String.valueOf(objectItem.get(fieldName))) {
-                            
+
                         insertMergeHistories.add(new C501_Merge_Account_History__c(
                             Account__c = masterRecord.Id,
                             Merge_Value__c = String.valueOf(masterRecord.get(fieldName)),
@@ -470,13 +487,14 @@ public with sharing class C501_MassMerge_SharedCode_Account {
                 }
 
                 for (String fieldName :customFieldMap.keySet()) {
+
                     if ( (masterRecord.get(fieldName) == null || String.isBlank(String.valueOf(masterRecord.get(fieldName)))) &&
                         objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName)))) {
 
                         try{
                             masterRecord.put(fieldName, objectItem.get(fieldName));
                         } catch (Exception e) {
-                            System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Custom Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Custom Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                         }
                     }
                     else if (objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName))) &&
@@ -495,24 +513,24 @@ public with sharing class C501_MassMerge_SharedCode_Account {
             Database.SaveResult updateResult = Database.update((Account)masterRecord, false);
             if (!updateResult.isSuccess()) {
                 for (Database.Error err : updateResult.getErrors()) {
-                    System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge Exception: ' + err.getMessage());
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge Exception: ' + err.getMessage());
                 }
             }
-
             if (!insertMergeHistories.isEmpty()) {
                 Database.SaveResult[] insertResults = Database.insert(insertMergeHistories, false);
                 for (Database.SaveResult insertResult :insertResults) {
                     if (!insertResult.isSuccess()) {
                         for (Database.Error err : insertResult.getErrors()) {
-                            System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge History Exception: ' + err.getMessage());
+                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge History Exception: ' + err.getMessage());
                         }
                     }
                 }
             }
-
         } catch (Exception e) {
-            System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge update fields exception: ' + String.valueOf(e.getMessage()));
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge update fields exception: ' + String.valueOf(e.getMessage()));
         }
+
+        c501mm.C501_MassMerge_SharedCode.OutputDebugLogFlush();
     }
 
     public void ObjectsMerge(Account masterObject, List<Account> duplicateObjects) {
@@ -548,10 +566,11 @@ public with sharing class C501_MassMerge_SharedCode_Account {
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
         
-        List<C501_Account_Merge__c> deleteMerges = Database.query(strSoql);
+        List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
 
-        if (!deleteMerges.isEmpty()) {
-            delete deleteMerges;
+        if (!deleteAccountMerges.isEmpty()) {
+           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Account Merges: ' + deleteAccountMerges);
+            delete deleteAccountMerges;
         }
    }
 }

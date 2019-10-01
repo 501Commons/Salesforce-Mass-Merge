@@ -124,7 +124,7 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Account.C501_Household_Id__c</field>
-        <readable>true</readable>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
@@ -298,6 +298,16 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>C501_Debug_Log__c.Debug_Text_Long__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>C501_Debug_Log__c.Debug_Text__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>C501_Merge_Account_History__c.User__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -384,7 +394,7 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>Contact.C501_Household_Id__c</field>
-        <readable>true</readable>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
@@ -573,6 +583,15 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>true</modifyAllRecords>
         <object>C501_Contact_Merge__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>C501_Debug_Log__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
     <objectPermissions>

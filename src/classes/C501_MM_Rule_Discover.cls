@@ -125,26 +125,28 @@ public class C501_MM_Rule_Discover {
 
         if (!mergeMetricDeleteChildren.isEmpty()) {
 
-            String strSoqlAccountMergesDelete = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+            String strSoqlDeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
 
-            strSoqlAccountMergesDelete += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
+            strSoqlDeleteAccountMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlAccountMergesDelete);
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlDeleteAccountMerges);
 
-            List<C501_Account_Merge__c> accountMergesDelete = Database.query(strSoqlAccountMergesDelete);
-            if (!accountMergesDelete.isEmpty()) {
-                Database.delete(accountMergesDelete, False);
+            List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqlDeleteAccountMerges);
+            if (!deleteAccountMerges.isEmpty()) {
+                Database.delete(deleteAccountMerges, False);
             }
 
-            String strSoqlContactMergesDelete = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+            String strSoqlDeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
 
-            strSoqlContactMergesDelete += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
+            strSoqlDeleteContactMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlContactMergesDelete);
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlDeleteContactMerges);
 
-            List<C501_Contact_Merge__c> contactMergesDelete = Database.query(strSoqlContactMergesDelete);
-            if (!contactMergesDelete.isEmpty()) {
-                Database.delete(contactMergesDelete, False);
+            List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqlDeleteContactMerges);
+            if (!deleteContactMerges.isEmpty()) {
+
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete contactMerges: ' + deleteContactMerges);
+                Database.delete(deleteContactMerges, False);
             }
         }
 
@@ -285,7 +287,7 @@ public class C501_MM_Rule_Discover {
         // Add Null checks
         for (String column :detailColumnsChecked) {
             // Skip Null check on fields not required to uniquely group contacts
-            if (column.contains('Gender')) {
+            if (column.equalsIgnoreCase('gender__c')) {
                 continue;
             }
 
@@ -606,7 +608,7 @@ public class C501_MM_Rule_Discover {
         for (String column :detailColumnsChecked) {
 
             // Skip Null check on fields not required to uniquely group contacts
-            if (column.contains('Gender')) {
+            if (column.equalsIgnoreCase('gender__c')) {
                 continue;
             }
 

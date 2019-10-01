@@ -76,6 +76,8 @@
         <members>C501_Contact_Merge__c.Merge_Metric__c</members>
         <members>C501_Contact_Merge__c.Merge_Target_Contact__c</members>
         <members>C501_Contact_Merge__c.Unique_Id__c</members>
+        <members>C501_Debug_Log__c.Debug_Text_Long__c</members>
+        <members>C501_Debug_Log__c.Debug_Text__c</members>
         <members>C501_Merge_Account_History__c.Account__c</members>
         <members>C501_Merge_Account_History__c.Field__c</members>
         <members>C501_Merge_Account_History__c.Ignore_Value__c</members>
@@ -144,6 +146,7 @@
         <members>C501_Account_Merge_Member__c</members>
         <members>C501_Account_Merge__c</members>
         <members>C501_Contact_Merge__c</members>
+        <members>C501_Debug_Log__c</members>
         <members>C501_Merge_Account_History__c</members>
         <members>C501_Merge_Contact_History__c</members>
         <members>C501_Merge_Metric__c</members>
@@ -170,6 +173,7 @@
         <members>C501_Account_Merge_Member__c-Account Merge Member Layout</members>
         <members>C501_Account_Merge__c-Account Merge Layout</members>
         <members>C501_Contact_Merge__c-Contact Merge Layout</members>
+        <members>C501_Debug_Log__c-Debug Log Layout</members>
         <members>C501_Merge_Account_History__c-Merge Account History Layout</members>
         <members>C501_Merge_Contact_History__c-Merge Contact History Layout</members>
         <members>C501_Merge_Metric__c-Merge Metric Layout</members>
@@ -178,9 +182,7 @@
     <types>
         <members>C501_Account_Merge__c.All</members>
         <members>C501_Contact_Merge__c.All</members>
-        <members>C501_Merge_Metric__c.All</members>
-        <members>C501_Merge_Metric__c.All1</members>
-        <members>C501_Merge_Metric__c.All_NPSP</members>
+        <members>C501_Merge_Metric__c.All_Metrics</members>
         <name>ListView</name>
     </types>
     <types>

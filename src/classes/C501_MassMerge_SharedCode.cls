@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public with sharing class C501_MassMerge_SharedCode { 
+public without sharing class C501_MassMerge_SharedCode { 
 
     // public utility used to detect whether the Non Profit Starter Pack is installed in this instance.
     private static boolean fCheckedForNPSP = false;
@@ -59,6 +59,47 @@ public with sharing class C501_MassMerge_SharedCode {
         }
         set;
     }   
+
+    public static String GetMergeContactHouseholdId(C501_Contact_Merge__c mergeObject) {
+        return mergeObject.Contact__r.AccountId;
+    }
+
+    public static String GetMergeTargetContactHouseholdId(C501_Contact_Merge__c mergeObject) {
+        return mergeObject.Merge_Target_Contact__r.AccountId;
+    }
+
+    public static String GetMergeAccountHouseholdId(C501_Account_Merge__c mergeObject) {
+        return mergeObject.Account__c;
+    }
+
+    public static String GetMergeTargetAccountHouseholdId(C501_Account_Merge__c mergeObject) {
+        return mergeObject.Merge_Target_Account__c;
+    }
+
+    private static List<C501_Debug_Log__c> insertDebugLogs = new List<C501_Debug_Log__c>();
+    public static void OutputDebugLogFlush() {
+        if (!insertDebugLogs.isEmpty()) {
+            insert insertDebugLogs;
+            insertDebugLogs.clear();
+        }
+    }
+
+    public static void OutputDebugLogClear() {
+        List<C501_Debug_Log__c> deleteDebugLogs = [SELECT Id FROM C501_Debug_Log__c];
+        if (!deleteDebugLogs.isEmpty()) {
+            delete deleteDebugLogs;
+        }
+    }
+
+    static final Integer MAX_DEBUG_LOG_TEXT_SIZE = 32768;
+    public static void OutputDebugLogText(Boolean writeToDebugTable, LoggingLevel logLevel, String logMessage) {
+        
+        System.debug(logLevel, logMessage);
+
+        if (writeToDebugTable) {
+            insertDebugLogs.add(new C501_Debug_Log__c(Debug_Text_Long__c = logMessage.Left(MAX_DEBUG_LOG_TEXT_SIZE)));
+        }
+    }
 
     public static String GetSafeSoqlList(List<String> strList) {
 
@@ -160,8 +201,8 @@ public with sharing class C501_MassMerge_SharedCode {
 
         String strSoql = 'SELECT';
         strSoql += ' Id, Unique_Id__c,';
-        strSoql += ' Account__c, Account__r.C501_Household_Id__c, Account__r.IsDeleted,';
-        strSoql += ' Merge_Target_Account__c, Merge_Target_Account__r.C501_Household_Id__c, Merge_Target_Account__r.IsDeleted,';
+        strSoql += ' Account__c, Account__r.IsDeleted,';
+        strSoql += ' Merge_Target_Account__c, Merge_Target_Account__r.IsDeleted,';
         strSoql += ' Merge_Confidence__c, Merge_Action__c,';
         strSoql += ' Merge_Metric__c, Merge_Metric__r.Name';
         strSoql += ' FROM C501_Account_Merge__c';
@@ -178,8 +219,8 @@ public with sharing class C501_MassMerge_SharedCode {
 
         String strSoql = 'SELECT';
         strSoql += ' Id, Unique_Id__c,';
-        strSoql += ' Contact__c, Contact__r.C501_Household_Id__c, Contact__r.IsDeleted,';
-        strSoql += ' Merge_Target_Contact__c, Merge_Target_Contact__r.C501_Household_Id__c, Merge_Target_Contact__r.IsDeleted,';
+        strSoql += ' Contact__c, Contact__r.AccountId, Contact__r.IsDeleted,';
+        strSoql += ' Merge_Target_Contact__c, Merge_Target_Contact__r.AccountId, Merge_Target_Contact__r.IsDeleted,';
         strSoql += ' Merge_Confidence__c, Merge_Action__c,';
         strSoql += ' Merge_Metric__c, Merge_Metric__r.Name';
         strSoql += ' FROM C501_Contact_Merge__c';
@@ -290,10 +331,10 @@ public with sharing class C501_MassMerge_SharedCode {
         strSoql += ' AND Name = \'' + mergeMetricName + '\'';
 
         System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
-
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
 
         if (mergeMetrics.isEmpty()) {
+
             mergeMetrics.add( new C501_Merge_Metric__c (
                 Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
                 Confidence__c = 90.0,
@@ -338,7 +379,14 @@ public with sharing class C501_MassMerge_SharedCode {
         for (Contact contact : [
             SELECT Id, AccountId FROM Contact WHERE Id in :contactIds]) {
 
-            contactAccounts.put(contact.Id, contact.AccountId);
+            // Contact could have null account if not NPSP household model
+            if (contact.AccountId <> null) {
+                contactAccounts.put(contact.Id, contact.AccountId);
+            }
+        }
+
+        if (contactAccounts.isEmpty() || contactAccounts.values().isEmpty()) {
+            return;
         }
 
         Map<Id, Integer> accountMembers = new Map<Id, Integer>();
@@ -375,19 +423,18 @@ public with sharing class C501_MassMerge_SharedCode {
 
         // Delete any account merges for accounts where contact was merged
         strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-        
         strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
 
         System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+        List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
 
-        List<C501_Account_Merge__c> deleteMerges = Database.query(strSoql);
-
-        if (!deleteMerges.isEmpty()) {
-            delete deleteMerges;
+        if (!deleteAccountMerges.isEmpty()) {
+           System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
+            delete deleteAccountMerges;
         }
 
         // Queue empty household merge
-        if (!accountMergeInserts.values().isEmpty()) {
+        if (!accountMergeInserts.isEmpty() && !accountMergeInserts.values().isEmpty()) {
             insert accountMergeInserts.values();
         }
     }
@@ -479,6 +526,11 @@ public with sharing class C501_MassMerge_SharedCode {
             for (C501_Contact_Merge__c pendingAutoMerge :pendingAutoMerges) {
 
                 if (!contactHouseholdMap.containsKey(pendingAutoMerge.Contact__c) || !contactHouseholdMap.containsKey(pendingAutoMerge.Merge_Target_Contact__c)) {
+                    continue;
+                }
+
+                // Check for valid household - for instance might not be NPSP households so Account could be null for a contact
+                if (contactHouseholdMap.get(pendingAutoMerge.Contact__c) == null || contactHouseholdMap.get(pendingAutoMerge.Merge_Target_Contact__c) == null) {
                     continue;
                 }
 
@@ -637,9 +689,13 @@ public with sharing class C501_MassMerge_SharedCode {
             ));
         }
 
-        insert listOpportunityHouseholds.values();
-        insert listContacts;
+        if (!listOpportunityHouseholds.isEmpty() && !listOpportunityHouseholds.values().isEmpty()) {
+            insert listOpportunityHouseholds.values();
+        }
 
+        if (!listContacts.isEmpty()) {
+            insert listContacts;
+        }
 
         //C501_MassMerge_SharedCode.PrintSalesforceStructure();
     }

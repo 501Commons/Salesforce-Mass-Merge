@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public with sharing class C501_MM_Action_Controller {
+public without sharing class C501_MM_Action_Controller {
 
     public Id Id { get; set; }
     public C501_Merge_Metric__c mergeMetric { get; set; }

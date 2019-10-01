@@ -137,24 +137,26 @@ public class C501_MM_Rule_Merge implements Schedulable {
                 // Queue merge metric to delete children since report changed or report not found
                 //
 
-                String strSoqlAccountMergesDelete = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-                strSoqlAccountMergesDelete += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+                String strSoqldeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+                strSoqldeleteAccountMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlAccountMergesDelete);
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
+                List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqldeleteAccountMerges);
 
-                List<C501_Account_Merge__c> accountMergesDelete = Database.query(strSoqlAccountMergesDelete);
-                if (!accountMergesDelete.isEmpty()) {
-                    delete accountMergesDelete;
+                if (!deleteAccountMerges.isEmpty()) {
+                    System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
+                    delete deleteAccountMerges;
                 }
 
-                String strSoqlContactMergesDelete = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-                strSoqlContactMergesDelete += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+                String strSoqldeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+                strSoqldeleteContactMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlContactMergesDelete);
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
+                List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqldeleteContactMerges);
 
-                List<C501_Contact_Merge__c> contactMergesDelete = Database.query(strSoqlContactMergesDelete);
-                if (!contactMergesDelete.isEmpty()) {
-                    delete contactMergesDelete;
+                if (!deleteContactMerges.isEmpty()) {
+                    System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
+                    delete deleteContactMerges;
                 }
 
                 continue;

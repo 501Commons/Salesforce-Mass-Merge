@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public virtual with sharing class C501_CTRL_MassMergeAccounts {
+public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
     private C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account;
     private List<String> listStrFields;
@@ -478,17 +478,22 @@ public virtual with sharing class C501_CTRL_MassMergeAccounts {
                 }
             }
 
-            if (!listAccountsMergesIgnore.values().isEmpty()) {
+            Integer mergesIgnoreSize = 0;
+            if (!listAccountsMergesIgnore.isEmpty() && !listAccountsMergesIgnore.values().isEmpty()) {
+
+                mergesIgnoreSize = listAccountsMergesIgnore.size();
                 update listAccountsMergesIgnore.values();
             }
 
-            if (!listAccountsMergesMaster.values().isEmpty()) {
+            Integer mergesMasterSize = 0;
+            if (!listAccountsMergesMaster.isEmpty() && !listAccountsMergesMaster.values().isEmpty()) {
 
+                mergesMasterSize = listAccountsMergesMaster.size();
                 update listAccountsMergesMaster.values();
                 c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c>{}, listAccountsMergesMaster.values(), false);
             }
 
-            strSaveResults = ( (listAccountsMergesIgnore.values().size() + listAccountsMergesMaster.values().size()) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
+            strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
             ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.CONFIRM, strSaveResults));
 
             // successful save, so clear out dirty list

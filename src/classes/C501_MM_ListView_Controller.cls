@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public with sharing class C501_MM_ListView_Controller {
+public without sharing class C501_MM_ListView_Controller {
 
     public C501_MM_ListView_Controller(ApexPages.StandardSetController controller) {
     }

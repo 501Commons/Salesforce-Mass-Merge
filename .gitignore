@@ -21,3 +21,4 @@ test_results*
 /force-app
 /src.orig
 /debug.log
+.cci
