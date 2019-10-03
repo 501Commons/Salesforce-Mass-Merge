@@ -392,8 +392,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         C501_MassMerge_SharedCode.OutputDebugLogClear();
 
         Map<String, Schema.SObjectField> objectFields = Schema.SObjectType.Contact.fields.getMap();
-        Map<String, Schema.DescribeFieldResult> standardFieldMap = new Map<String, Schema.DescribeFieldResult>();
-        Map<String, Schema.DescribeFieldResult> customFieldMap = new Map<String, Schema.DescribeFieldResult>();
+        Map<String, Schema.DescribeFieldResult> fieldMap = new Map<String, Schema.DescribeFieldResult>();
 
         // Construct the query string
         String strSoql = 'Select ';
@@ -412,6 +411,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 continue;
             }
 */
+
             // Only include the fields which are updateable and accessible and not hidden, unique, or externalid
             if (fResult.isPermissionable() && fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
 
@@ -430,11 +430,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     continue;
                 }
 
-                if(fResult.isCustom()) {
-                    customFieldMap.put(fieldName, fResult);
-                } else {
-                    standardFieldMap.put(fieldName, fResult);
-                }
+                fieldMap.put(fieldName, fResult);
             }
             else {
                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
@@ -459,6 +455,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
             // Merge fields into master
             SObject masterRecord = null;
+            Set<String> emailsUsed = new Set<String>();
+            Set<String> emailsAvailable = new Set<String>();
+            Set<String> phonesUsed = new Set<String>();
+            Set<String> phonesAvailable = new Set<String>();
             for (SObject objectItem :objectList) {
 
                 // Check to assign master object
@@ -467,38 +467,96 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     continue;
                 }
 
-                for (String fieldName :standardFieldMap.keySet()) {
+                for (String fieldName :fieldMap.keySet()) {
 
-                    if ( (masterRecord.get(fieldName) == null || String.isBlank(String.valueOf(masterRecord.get(fieldName)))) &&
+                    Boolean skipFieldUpdate = false;
+
+                    // Handle Phone
+                    if (fieldName.equalsIgnoreCase('HomePhone') || fieldName.equalsIgnoreCase('MobilePhone') || fieldName.equalsIgnoreCase('Phone') || fieldName.equalsIgnoreCase('OtherPhone') || fieldName.equalsIgnoreCase('npo02__HouseholdPhone__c') || fieldName.equalsIgnoreCase('npe01__WorkPhone__c')) {
+
+                        String masterPhone = String.valueOf(masterRecord.get(fieldName));
+                        String duplicatePhone = String.valueOf(objectItem.get(fieldName));
+                        if (!String.isBlank(masterPhone)) {
+                            phonesUsed.add(masterPhone);
+
+                            if (phonesAvailable.contains(masterPhone)) {
+                                phonesAvailable.remove(masterPhone);
+                            }
+                        }
+
+                        if (!String.isBlank(duplicatePhone) && !phonesUsed.contains(duplicatePhone)) {
+                            phonesAvailable.add(duplicatePhone);
+                        }
+
+                        if (String.isBlank(masterPhone) && !phonesAvailable.isEmpty()) {
+                            
+                            String phoneValue;
+                            for (String setValue :phonesAvailable) {
+                                phoneValue = setValue;
+                                break;
+                            }
+                            phonesAvailable.remove(phoneValue);
+
+                            try{
+                                masterRecord.put(fieldName, phoneValue);
+                                skipFieldUpdate = true;
+                            } catch (Exception e) {
+                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Phone Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                            }
+                        }
+                    }
+
+                    // Handle Email
+                    if (fieldName.equalsIgnoreCase('Email') || fieldName.equalsIgnoreCase('npe01__WorkEmail__c') || fieldName.equalsIgnoreCase('npe01__AlternateEmail__c') || fieldName.equalsIgnoreCase('npe01__HomeEmail__c')) {
+
+                        String masterEmail = String.valueOf(masterRecord.get(fieldName));
+                        String duplicateEmail = String.valueOf(objectItem.get(fieldName));
+                        if (!String.isBlank(masterEmail)) {
+                            emailsUsed.add(masterEmail);
+
+                            if (emailsAvailable.contains(masterEmail)) {
+                                emailsAvailable.remove(masterEmail);
+                            }
+                        }
+
+                        if (!String.isBlank(duplicateEmail) && !emailsUsed.contains(duplicateEmail)) {
+                            emailsAvailable.add(duplicateEmail);
+                        }
+
+                        if (String.isBlank(masterEmail) && !emailsAvailable.isEmpty()) {
+                            
+                            String emailValue;
+                            for (String setValue :emailsAvailable) {
+                                emailValue = setValue;
+                                break;
+                            }
+                            emailsAvailable.remove(emailValue);
+
+                            try{
+                                masterRecord.put(fieldName, emailValue);
+                                skipFieldUpdate = true;
+                            } catch (Exception e) {
+                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Email Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                            }
+                        }
+                    }
+
+                    // Skip Address because don't want to run the risk of blending different types of addresses together
+                    // Future Change - update all or none of an address category
+                    if ( (fieldName.startsWithIgnoreCase('Mailing') || fieldName.startsWithIgnoreCase('Shipping') || fieldName.startsWithIgnoreCase('Other') || fieldName.startsWithIgnoreCase('Billing')) &&
+                        (fieldName.endsWithIgnoreCase('Address') || fieldName.endsWithIgnoreCase('City') || fieldName.endsWithIgnoreCase('Country') || fieldName.endsWithIgnoreCase('GeocodeAccuracy') || fieldName.endsWithIgnoreCase('Latitude') || fieldName.endsWithIgnoreCase('Longitude') || fieldName.endsWithIgnoreCase('PostalCode') || fieldName.endsWithIgnoreCase('State') || fieldName.endsWithIgnoreCase('Street')) ) {
+                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
+                        skipFieldUpdate = true;
+                    }
+
+                    if (!skipFieldUpdate && 
+                        (masterRecord.get(fieldName) == null || String.isBlank(String.valueOf(masterRecord.get(fieldName)))) &&
                         objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName)))) {
 
                         try{
                             masterRecord.put(fieldName, objectItem.get(fieldName));
                         } catch (Exception e) {
                             C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
-                        }
-                    }
-                    else if (objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName))) &&
-                        String.valueOf(masterRecord.get(fieldName)) <> String.valueOf(objectItem.get(fieldName))) {
-
-                        insertMergeHistories.add(new C501_Merge_Contact_History__c(
-                            Contact__c = masterRecord.Id,
-                            Merge_Value__c = String.valueOf(masterRecord.get(fieldName)),
-                            Ignore_Value__c = String.valueOf(objectItem.get(fieldName)),
-                            Field__c =  fieldName
-                        ));
-                    }
-                }
-
-                for (String fieldName :customFieldMap.keySet()) {
-
-                    if ( (masterRecord.get(fieldName) == null || String.isBlank(String.valueOf(masterRecord.get(fieldName)))) &&
-                        objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName)))) {
-
-                        try{
-                            masterRecord.put(fieldName, objectItem.get(fieldName));
-                        } catch (Exception e) {
-                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Custom Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                         }
                     }
                     else if (objectItem.get(fieldName) <> null && !String.isBlank(String.valueOf(objectItem.get(fieldName))) &&
