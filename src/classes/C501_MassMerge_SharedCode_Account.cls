@@ -124,12 +124,6 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         Set<String> mergeObjectsExisting = new Set<String>();
         List<C501_Account_Merge__c> deleteAccountMerges = new List<C501_Account_Merge__c>();
 
-        Boolean isSandbox = false;
-        List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
-        if (!organizations.isEmpty()) {
-            isSandbox = Boolean.valueOf(organizations[0].IsSandbox);
-        }
-
         String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
         strSoql += ' AND Merge_Metric__r.Name = \'' + mergeMetricName + '\'';
 
@@ -178,26 +172,10 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             if (!mergeObjectsInsert.isEmpty()) {
 
                 Database.SaveResult[] insertResults = Database.insert(mergeObjectsInsert, false);
-
                 for (Database.SaveResult result : insertResults) {
                     if (!result.isSuccess()) {
                         for(Database.Error resultError : result.getErrors()) {
-
-                            String statusCode = String.valueOf(resultError.getStatusCode());
-
-                            // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
-                            if (isSandbox && statusCode.contains('INVALID_CROSS_REFERENCE_KEY')) {
-                                continue;
-                            }
-
-                            // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
-                            if (statusCode.contains('DUPLICATE_VALUE')) {
-                                continue;
-                            }
-
-                            System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::InsertObjectMergeCandidates Database.SaveResult Error');
-                            System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
-                            System.debug(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates');
                         }                        
                     }
                 }
@@ -583,16 +561,18 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
             Database.SaveResult updateResult = Database.update((Account)masterRecord, false);
             if (!updateResult.isSuccess()) {
-                for (Database.Error err : updateResult.getErrors()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge Exception: ' + err.getMessage());
+                for (Database.Error resultError : updateResult.getErrors()) {
+                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsFieldMerge');
                 }
             }
+
             if (!insertMergeHistories.isEmpty()) {
+
                 Database.SaveResult[] insertResults = Database.insert(insertMergeHistories, false);
                 for (Database.SaveResult insertResult :insertResults) {
                     if (!insertResult.isSuccess()) {
-                        for (Database.Error err : insertResult.getErrors()) {
-                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge History Exception: ' + err.getMessage());
+                        for (Database.Error resultError : insertResult.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsFieldMerge');
                         }
                     }
                 }

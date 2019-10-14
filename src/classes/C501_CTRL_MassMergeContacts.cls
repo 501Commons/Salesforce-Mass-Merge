@@ -357,10 +357,16 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         }
 
         // Update Contacts w/ Merge fields then query to get the correct sort order by Metric Name
-        update listContacts;
+        Database.SaveResult[] updateResults = Database.update(listContacts, false);
+        for (Database.SaveResult updateResult :updateResults) {
+            if (!updateResult.isSuccess()) {
+                for(Database.Error resultError : updateResult.getErrors()) {
+                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts');
+                }                        
+            }
+        }
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
-
         listContacts = Database.Query(strSoql);
     }
     
@@ -478,14 +484,28 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             if (!listContactsMergesIgnore.values().isEmpty()) {
 
                 mergesIgnoreSize = listContactsMergesIgnore.size();
-                update listContactsMergesIgnore.values();
+                Database.SaveResult[] updateResults = Database.update(listContactsMergesIgnore.values(), false);
+                for (Database.SaveResult updateResult :updateResults) {
+                    if (!updateResult.isSuccess()) {
+                        for(Database.Error resultError : updateResult.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::SaveContacts');
+                        }                        
+                    }
+                }
             }
 
             Integer mergesMasterSize = 0;
             if (!listContactsMergesMaster.values().isEmpty()) {
 
                 mergesMasterSize = listContactsMergesMaster.size();
-                update listContactsMergesMaster.values();
+                Database.SaveResult[] updateResults = Database.update(listContactsMergesMaster.values(), false);
+                for (Database.SaveResult updateResult :updateResults) {
+                    if (!updateResult.isSuccess()) {
+                        for(Database.Error resultError : updateResult.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::SaveContacts');
+                        }                        
+                    }
+                }
                 c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), listContactsMergesMaster.values(), true);
             }
 

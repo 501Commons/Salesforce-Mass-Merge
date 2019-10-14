@@ -178,7 +178,14 @@ public class C501_MM_Rule_Merge implements Schedulable {
         }
 
         if (!mergeMetricsUpdate.isEmpty()) {
-            Database.update(mergeMetricsUpdate, False);
+            Database.SaveResult[] updateResults = Database.update(mergeMetricsUpdate, false);
+            for (Database.SaveResult updateResult :updateResults) {
+                if (!updateResult.isSuccess()) {
+                    for(Database.Error resultError : updateResult.getErrors()) {
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics');
+                    }                        
+                }
+            }
         }
     }
 }

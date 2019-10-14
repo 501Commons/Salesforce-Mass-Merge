@@ -361,10 +361,16 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         }
 
         // Update Accounts w/ Merge fields then query to get the correct sort order by Metric Name
-        update listAccounts;
+        Database.SaveResult[] updateResults = Database.update(listAccounts, false);
+        for (Database.SaveResult updateResult :updateResults) {
+            if (!updateResult.isSuccess()) {
+                for(Database.Error resultError : updateResult.getErrors()) {
+                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts');
+                }                        
+            }
+        }
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql: ' + strSoql);
-
         listAccounts = Database.Query(strSoql);
     }
     
@@ -482,14 +488,28 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             if (!listAccountsMergesIgnore.isEmpty() && !listAccountsMergesIgnore.values().isEmpty()) {
 
                 mergesIgnoreSize = listAccountsMergesIgnore.size();
-                update listAccountsMergesIgnore.values();
+                Database.SaveResult[] updateResults = Database.update(listAccountsMergesIgnore.values(), false);
+                for (Database.SaveResult updateResult :updateResults) {
+                    if (!updateResult.isSuccess()) {
+                        for(Database.Error resultError : updateResult.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::SaveAccounts');
+                        }                        
+                    }
+                }
             }
 
             Integer mergesMasterSize = 0;
             if (!listAccountsMergesMaster.isEmpty() && !listAccountsMergesMaster.values().isEmpty()) {
 
                 mergesMasterSize = listAccountsMergesMaster.size();
-                update listAccountsMergesMaster.values();
+                Database.SaveResult[] updateResults = Database.update(listAccountsMergesMaster.values(), false);
+                for (Database.SaveResult updateResult :updateResults) {
+                    if (!updateResult.isSuccess()) {
+                        for(Database.Error resultError : updateResult.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::SaveAccounts');
+                        }                        
+                    }
+                }
                 c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c>{}, listAccountsMergesMaster.values(), false);
             }
 

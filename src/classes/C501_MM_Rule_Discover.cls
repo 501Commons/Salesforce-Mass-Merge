@@ -151,7 +151,14 @@ public class C501_MM_Rule_Discover {
         }
 
         if (!mergeMetricsUpdate.isEmpty()) {
-            Database.update(mergeMetricsUpdate, False);
+            Database.SaveResult[] updateResults = Database.update(mergeMetricsUpdate, false);
+            for (Database.SaveResult updateResult :updateResults) {
+                if (!updateResult.isSuccess()) {
+                    for(Database.Error resultError : updateResult.getErrors()) {
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics');
+                    }                        
+                }
+            }
         }
     }
 
@@ -536,51 +543,16 @@ public class C501_MM_Rule_Discover {
 
         if (!insertMergeMembers.isEmpty()) {
            
+            // Insert any merge members that are not in Saleforce - saves a query to just let the DB either update or insert records
+            //
             Database.SaveResult[] insertResults = Database.insert(insertMergeMembers, false);
-
-            Boolean isSandbox = false;
-            List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
-            if (!organizations.isEmpty()) {
-                isSandbox = Boolean.valueOf(organizations[0].IsSandbox);
-            }
-
             for (Database.SaveResult result : insertResults) {
                 if (!result.isSuccess()) {
                     for(Database.Error resultError : result.getErrors()) {
-
-                        String statusCode = String.valueOf(resultError.getStatusCode());
-
-                        // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
-                        if (isSandbox && statusCode.contains('INVALID_CROSS_REFERENCE_KEY')) {
-                            continue;
-                        }
-
-                        // Check DUPLICATE_VALUE which means already exists and add as update - let the DB find which ones to update vs insert to save SOQL queries
-                        if (statusCode.contains('DUPLICATE_VALUE')) {
-                            //result.getId();
-
-                            // Duplicate - I wonder if the insert insertMergeMembers is updated with the Id from SF or just ones that are actually inserted the Id is updated
-
-                            continue;
-                        }
-
-                        System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover::ProcessReportByAccounts Database.SaveResult Error');
-                        System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
-                        System.debug(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts');
                     }                        
                 }
             }
-
-            // Call update which will update ones just inserted but will also update the Potential_Merges__c field for ones already in DB (Need to verify this if not use the result.getId)
-            Integer numberOfIds = 0;
-            for (C501_Account_Merge_Member__c mergeMember :insertMergeMembers) {
-                if (!String.isBlank(mergeMember.Id)) {
-                    numberOfIds++;
-                }
-            }
-
-            System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover::ProcessReportByAccounts numberOfIds: ' + numberOfIds);
-            Database.update(insertMergeMembers, false);
         }
 
         C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();

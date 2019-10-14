@@ -60,6 +60,41 @@ public without sharing class C501_MassMerge_SharedCode {
         set;
     }   
 
+    public static Boolean LogDatabaseError(Database.Error resultError, String callingMethod) {
+
+        String statusCode = String.valueOf(resultError.getStatusCode());
+
+        // Ignore UNABLE_TO_LOCK_ROW because can happen with all the event firing - performance issue later to try an figure it out
+        if (statusCode.contains('UNABLE_TO_LOCK_ROW')) {
+            return false;
+        }
+
+        // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
+        if (statusCode.contains('DUPLICATE_VALUE')) {
+            return false;
+        }
+
+        // NOTE: If this triggers too many SOQL query limit then look to do this once and just reference in all the other locations
+        Boolean isSandbox = false;
+        List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
+        if (!organizations.isEmpty()) {
+            isSandbox = Boolean.valueOf(organizations[0].IsSandbox);
+        }
+
+        // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
+        if (isSandbox && (statusCode.contains('INVALID_CROSS_REFERENCE_KEY') || statusCode.contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'))) {
+            return false;
+        }
+
+
+
+        System.debug(LoggingLevel.ERROR, '***** ' + callingMethod + ' Database.SaveResult Error');
+        System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
+        System.debug(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
+
+        return true;
+    }
+
     public static String GetMergeContactHouseholdId(C501_Contact_Merge__c mergeObject) {
         return mergeObject.Contact__r.AccountId;
     }
@@ -283,32 +318,10 @@ public without sharing class C501_MassMerge_SharedCode {
         if (!mergeMetricsInsert.isEmpty()) {
 
             Database.SaveResult[] insertResults = Database.insert(mergeMetricsInsert, false);
-
-            Boolean isSandbox = false;
-            List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
-            if (!organizations.isEmpty()) {
-                isSandbox = Boolean.valueOf(organizations[0].IsSandbox);
-            }
-
             for (Database.SaveResult result : insertResults) {
                 if (!result.isSuccess()) {
                     for(Database.Error resultError : result.getErrors()) {
-
-                        String statusCode = String.valueOf(resultError.getStatusCode());
-
-                        // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
-                        if (isSandbox && statusCode.contains('INVALID_CROSS_REFERENCE_KEY')) {
-                            continue;
-                        }
-
-                        // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
-                        if (statusCode.contains('DUPLICATE_VALUE')) {
-                            continue;
-                        }
-
-                        System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::InitializeMassMergeInstances Database.SaveResult Error');
-                        System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
-                        System.debug(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::InitializeMassMergeInstances');
                     }                        
                 }
             }
@@ -349,25 +362,13 @@ public without sharing class C501_MassMerge_SharedCode {
             ));
 
             Database.SaveResult[] insertResults = Database.insert(mergeMetrics, false);
-
             for (Database.SaveResult result : insertResults) {
                 if (!result.isSuccess()) {
                     for(Database.Error resultError : result.getErrors()) {
-
-                        String statusCode = String.valueOf(resultError.getStatusCode());
-
-                        // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
-                        if (statusCode.contains('DUPLICATE_VALUE')) {
-                            continue;
-                        }
-
-                        System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge_Contact Database.SaveResult Error');
-                        System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
-                        System.debug(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
                     }                        
                 }
             }
-
         }
 
         Set<Id> contactIds = new Set<Id> { masterContact.Id };
@@ -435,7 +436,14 @@ public without sharing class C501_MassMerge_SharedCode {
 
         // Queue empty household merge
         if (!accountMergeInserts.isEmpty() && !accountMergeInserts.values().isEmpty()) {
-            insert accountMergeInserts.values();
+            Database.SaveResult[] insertResults = Database.insert(accountMergeInserts.values(), false);
+            for (Database.SaveResult result : insertResults) {
+                if (!result.isSuccess()) {
+                    for(Database.Error resultError : result.getErrors()) {
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
+                    }                        
+                }
+            }
         }
     }
 
@@ -722,7 +730,14 @@ public without sharing class C501_MassMerge_SharedCode {
             mergeMetric.AutoMerge_Objects__c = 'Account;Contacts Within Account;Contacts Across Accounts';
         }
 
-        Database.update(mergeMetrics, False);
+        Database.SaveResult[] updateResults = Database.update(mergeMetrics, false);
+        for (Database.SaveResult updateResult :updateResults) {
+            if (!updateResult.isSuccess()) {
+                for(Database.Error resultError : updateResult.getErrors()) {
+                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::TestDiscoverHelper');
+                }                        
+            }
+        }
 
         //C501_MassMerge_SharedCode.PrintSalesforceStructure();
 
