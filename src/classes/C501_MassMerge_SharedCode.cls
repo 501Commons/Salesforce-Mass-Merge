@@ -60,6 +60,24 @@ public without sharing class C501_MassMerge_SharedCode {
         set;
     }   
 
+    private static Boolean fCheckedIsSandbox = false;
+    public static Boolean IsSandbox {
+        get {
+            if (!fCheckedIsSandbox) {
+                IsSandbox = true;
+                List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
+                if (!organizations.isEmpty()) {
+                    IsSandbox = Boolean.valueOf(organizations[0].IsSandbox);
+                }
+                fCheckedIsSandbox = true;
+            }
+
+            return IsSandbox;
+        }
+
+        set;
+    }
+
     public static Boolean LogDatabaseError(Database.Error resultError, String callingMethod) {
 
         String statusCode = String.valueOf(resultError.getStatusCode());
@@ -74,15 +92,8 @@ public without sharing class C501_MassMerge_SharedCode {
             return false;
         }
 
-        // NOTE: If this triggers too many SOQL query limit then look to do this once and just reference in all the other locations
-        Boolean isSandbox = false;
-        List<Organization> organizations = [SELECT IsSandbox FROM Organization LIMIT 1];
-        if (!organizations.isEmpty()) {
-            isSandbox = Boolean.valueOf(organizations[0].IsSandbox);
-        }
-
         // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
-        if (isSandbox && (statusCode.contains('INVALID_CROSS_REFERENCE_KEY') || statusCode.contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'))) {
+        if (C501_MassMerge_SharedCode.IsSandbox && (statusCode.contains('INVALID_CROSS_REFERENCE_KEY') || statusCode.contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'))) {
             return false;
         }
 
