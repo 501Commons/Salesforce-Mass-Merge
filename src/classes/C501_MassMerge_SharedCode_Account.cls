@@ -330,9 +330,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 // https://github.com/SalesforceFoundation/Cumulus/issues/4178                
 
                 // Schedule Batch Job in Flex Queue (can schedule up to 100 jobs)
-                List<String> objectsMergeIds = new List<String> { mergeCandidate.Account__c, mergeCandidate.Merge_Target_Account__c };
                 C501_MassMerge_Batch batchMergeRequest = new C501_MassMerge_Batch();
-                batchMergeRequest.query = 'SELECT Id FROM Account WHERE Id in (\'' + String.join(objectsMergeIds, '\',\'') + '\') ORDER BY CreatedDate DESC';
+                batchMergeRequest.query = 'SELECT Id, Account__c, Merge_Target_Account__c FROM C501_Account_Merge__c WHERE Id = \'' + mergeCandidate.Id + '\'';
                 batchMergeRequest.AccountMerge = true;
                 Database.executeBatch(batchMergeRequest);
             }

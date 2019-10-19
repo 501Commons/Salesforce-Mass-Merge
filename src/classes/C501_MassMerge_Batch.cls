@@ -44,13 +44,11 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
     if (AccountMerge) {
       List<Account> accountDuplicates = new List<Account>();
       Account masterAccount = null;
-      for (sObject accountObject :scope) {
-        if (masterAccount == null) {
-          masterAccount = (Account)accountObject;
-        }
-        else {
-          accountDuplicates.add((Account)accountObject);
-        }
+      for (sObject mergeObject :scope) {
+        C501_Account_Merge__c mergeCandidate = (C501_Account_Merge__c)mergeObject;
+
+        masterAccount = new Account( Id = mergeCandidate.Account__c );
+        accountDuplicates.add(new Account( Id = mergeCandidate.Merge_Target_Account__c ));
       }
 
       System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterAccount: ' + String.valueOf(masterAccount));
@@ -75,13 +73,11 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
     else if (ContactMerge) {
       List<Contact> contactDuplicates = new List<Contact>();
       Contact masterContact = null;
-      for (sObject contactObject :scope) {
-        if (masterContact == null) {
-          masterContact = (Contact)contactObject;
-        }
-        else {
-          contactDuplicates.add((Contact)contactObject);
-        }
+      for (sObject mergeObject :scope) {
+        C501_Contact_Merge__c mergeCandidate = (C501_Contact_Merge__c)mergeObject;
+
+        masterContact = new Contact( Id = mergeCandidate.Contact__c );
+        contactDuplicates.add(new Contact( Id = mergeCandidate.Merge_Target_Contact__c ));
       }
 
       System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterContact: ' + String.valueOf(masterContact));

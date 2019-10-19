@@ -260,8 +260,8 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             Id = contactMerge.Id,
                             Merge_Action__c = contactMerge.Merge_Action__c,
                             Merge_Confidence__c = contactMerge.Merge_Confidence__c,
-                            Contact__c = contactMerge.Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
+                            Contact__c = contactMerge.Merge_Target_Contact__c,
+                            Merge_Target_Contact__c = contactMerge.Contact__c,
                             Merge_Metric__c = contactMerge.Merge_Metric__c,
                             Merge_Metric_Name__c = 'Merge ' + contactMerge.Merge_Metric__r.Name
                     ));
@@ -319,8 +319,8 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             Id = contactMerge.Id,
                             Merge_Action__c = contactMerge.Merge_Action__c,
                             Merge_Confidence__c = contactMerge.Merge_Confidence__c,
-                            Contact__c = contactMerge.Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
+                            Contact__c = contactMerge.Merge_Target_Contact__c,
+                            Merge_Target_Contact__c = contactMerge.Contact__c,
                             Merge_Metric__c = contactMerge.Merge_Metric__c,
                             Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + contactMerge.Merge_Metric__r.Name
                     ));
@@ -443,6 +443,8 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             continue;
                         }
 
+                        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master contact.Id: ' + contact.Id);
+
                         listContactsMergesMaster.put(contact.C501_Merge_Id__c, new C501_Contact_Merge__c(
                             Id = contact.C501_Merge_Id__c,
                             Contact__c = contact.Id,
@@ -452,6 +454,9 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             // Set merge Confidence to 100% to ensure merge regardless of automerge percentage
                             Merge_Confidence__c = 100.0
                         ));
+
+                        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master listContactsMergesMaster: ' + listContactsMergesMaster);
+
                     }
                 }
 

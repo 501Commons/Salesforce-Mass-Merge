@@ -330,9 +330,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 // https://github.com/SalesforceFoundation/Cumulus/issues/4178                
 
                 // Schedule Batch Job in Flex Queue (can schedule up to 100 jobs)
-                List<String> objectsMergeIds = new List<String> { mergeCandidate.Contact__c, mergeCandidate.Merge_Target_Contact__c };
                 C501_MassMerge_Batch batchMergeRequest = new C501_MassMerge_Batch();
-                batchMergeRequest.query = 'SELECT Id FROM Contact WHERE Id in (\'' + String.join(objectsMergeIds, '\',\'') + '\') ORDER BY CreatedDate DESC';
+                batchMergeRequest.query = 'SELECT Id, Contact__c, Merge_Target_Contact__c FROM C501_Contact_Merge__c WHERE Id = \'' + mergeCandidate.Id + '\'';
                 batchMergeRequest.ContactMerge = true;
                 Database.executeBatch(batchMergeRequest);
             }
@@ -437,11 +436,27 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             Set<String> emailsAvailable = new Set<String>();
             Set<String> phonesUsed = new Set<String>();
             Set<String> phonesAvailable = new Set<String>();
+
+            // Assign Master Record
             for (SObject objectItem :objectList) {
 
                 // Check to assign master object
-                if (masterRecord == null) {
+                if (masterObject.Id == objectItem.get('Id')) {
+
                     masterRecord = objectItem;
+                    break;
+                }
+            }
+
+            if (masterRecord == null) {
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
+                throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Unable to find Master Object - ' + String.valueOf(masterObject));
+            }
+
+            for (SObject objectItem :objectList) {
+
+                // Check to assign master object
+                if (masterRecord.Id == objectItem.get('Id')) {
                     continue;
                 }
 
@@ -477,6 +492,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                             try{
                                 masterRecord.put(fieldName, phoneValue);
+                                phonesUsed.add(phoneValue);
                                 skipMasterFieldUpdate = true;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Phone Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
@@ -510,6 +526,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                             try{
                                 masterRecord.put(fieldName, emailValue);
+                                emailsUsed.add(emailValue);
                                 skipMasterFieldUpdate = true;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Email Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
@@ -522,6 +539,9 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     if ( (fieldName.startsWithIgnoreCase('Mailing') || fieldName.startsWithIgnoreCase('Shipping') || fieldName.startsWithIgnoreCase('Other') || fieldName.startsWithIgnoreCase('Billing')) &&
                         (fieldName.endsWithIgnoreCase('Address') || fieldName.endsWithIgnoreCase('City') || fieldName.endsWithIgnoreCase('Country') || fieldName.endsWithIgnoreCase('GeocodeAccuracy') || fieldName.endsWithIgnoreCase('Latitude') || fieldName.endsWithIgnoreCase('Longitude') || fieldName.endsWithIgnoreCase('PostalCode') || fieldName.endsWithIgnoreCase('State') || fieldName.endsWithIgnoreCase('Street')) ) {
 
+                        // Check Master - if all related address fields are blank then allow merge fields
+                        // TBD
+                        
                         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
                         skipMasterFieldUpdate = true;
                     }

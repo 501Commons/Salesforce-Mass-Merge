@@ -264,8 +264,8 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                             Id = accountMerge.Id,
                             Merge_Action__c = accountMerge.Merge_Action__c,
                             Merge_Confidence__c = accountMerge.Merge_Confidence__c,
-                            Account__c = accountMerge.Account__c,
-                            Merge_Target_Account__c = accountMerge.Merge_Target_Account__c,
+                            Account__c = accountMerge.Merge_Target_Account__c,
+                            Merge_Target_Account__c = accountMerge.Account__c,
                             Merge_Metric__c = accountMerge.Merge_Metric__c,
                             Merge_Metric_Name__c = 'Merge ' + accountMerge.Merge_Metric__r.Name
                     ));
@@ -323,8 +323,8 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                             Id = accountMerge.Id,
                             Merge_Action__c = accountMerge.Merge_Action__c,
                             Merge_Confidence__c = accountMerge.Merge_Confidence__c,
-                            Account__c = accountMerge.Account__c,
-                            Merge_Target_Account__c = accountMerge.Merge_Target_Account__c,
+                            Account__c = accountMerge.Merge_Target_Account__c,
+                            Merge_Target_Account__c = accountMerge.Account__c,
                             Merge_Metric__c = accountMerge.Merge_Metric__c,
                             Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + accountMerge.Merge_Metric__r.Name
                     ));

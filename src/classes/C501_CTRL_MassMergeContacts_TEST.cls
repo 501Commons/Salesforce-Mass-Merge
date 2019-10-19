@@ -143,6 +143,21 @@ public class C501_CTRL_MassMergeContacts_TEST {
     }
 
     @isTest(SeeAllData='true')
+    public static void MergePhoneTests() {
+
+    }
+
+    @isTest(SeeAllData='true')
+    public static void MergeEmailTests() {
+
+    }
+
+    @isTest(SeeAllData='true')
+    public static void MergeAddressTests() {
+
+    }
+
+    @isTest(SeeAllData='true')
     public static void CodeCoverageTests() {
 
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
