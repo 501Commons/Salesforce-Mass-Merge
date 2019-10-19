@@ -394,7 +394,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -403,14 +403,14 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 if (string.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
                     continue;
                 }
 
                 fieldMap.put(fieldName, fResult);
             }
             else {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
+                //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
             }
         }
 
@@ -465,6 +465,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     Boolean skipMasterFieldUpdate = false;
                     String masterFieldValue = String.valueOf(masterRecord.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
+
+                    System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
 
                     // Handle Phone
                     if (fieldName.equalsIgnoreCase('HomePhone') || fieldName.equalsIgnoreCase('MobilePhone') || fieldName.equalsIgnoreCase('Phone') || fieldName.equalsIgnoreCase('OtherPhone') || fieldName.equalsIgnoreCase('npo02__HouseholdPhone__c') || fieldName.equalsIgnoreCase('npe01__WorkPhone__c')) {
@@ -541,7 +543,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                         // Check Master - if all related address fields are blank then allow merge fields
                         // TBD
-                        
+
                         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
                         skipMasterFieldUpdate = true;
                     }
@@ -558,7 +560,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                         if (String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue)) {
 
                             try{
-                                masterRecord.put(fieldName, duplicateFieldValue);
+                                masterRecord.put(fieldName, objectItem.get(fieldName));
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                             }

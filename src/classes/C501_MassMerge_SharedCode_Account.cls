@@ -223,7 +223,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
 
         if (!deleteAccountMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
             delete deleteAccountMerges;
         }
 
@@ -394,7 +394,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -403,14 +403,14 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 if (string.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
                     continue;
                 }
 
                 fieldMap.put(fieldName, fResult);
             }
             else {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
+                //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
             }
         }
 
@@ -436,11 +436,27 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             Set<String> emailsAvailable = new Set<String>();
             Set<String> phonesUsed = new Set<String>();
             Set<String> phonesAvailable = new Set<String>();
+
+            // Assign Master Record
             for (SObject objectItem :objectList) {
 
                 // Check to assign master object
-                if (masterRecord == null) {
+                if (masterObject.Id == objectItem.get('Id')) {
+
                     masterRecord = objectItem;
+                    break;
+                }
+            }
+
+            if (masterRecord == null) {
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
+                throw new C501_MassMerge_SharedCode_AccountException('Account Merge Unable to find Master Object - ' + String.valueOf(masterObject));
+            }
+
+            for (SObject objectItem :objectList) {
+
+                // Check to assign master object
+                if (masterRecord.Id == objectItem.get('Id')) {
                     continue;
                 }
 
@@ -476,6 +492,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
                             try{
                                 masterRecord.put(fieldName, phoneValue);
+                                phonesUsed.add(phoneValue);
                                 skipMasterFieldUpdate = true;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Phone Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
@@ -509,6 +526,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
                             try{
                                 masterRecord.put(fieldName, emailValue);
+                                emailsUsed.add(emailValue);
                                 skipMasterFieldUpdate = true;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Email Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
@@ -521,6 +539,9 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     if ( (fieldName.startsWithIgnoreCase('Mailing') || fieldName.startsWithIgnoreCase('Shipping') || fieldName.startsWithIgnoreCase('Other') || fieldName.startsWithIgnoreCase('Billing')) &&
                         (fieldName.endsWithIgnoreCase('Address') || fieldName.endsWithIgnoreCase('City') || fieldName.endsWithIgnoreCase('Country') || fieldName.endsWithIgnoreCase('GeocodeAccuracy') || fieldName.endsWithIgnoreCase('Latitude') || fieldName.endsWithIgnoreCase('Longitude') || fieldName.endsWithIgnoreCase('PostalCode') || fieldName.endsWithIgnoreCase('State') || fieldName.endsWithIgnoreCase('Street')) ) {
 
+                        // Check Master - if all related address fields are blank then allow merge fields
+                        // TBD
+                        
                         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
                         skipMasterFieldUpdate = true;
                     }
@@ -537,9 +558,9 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                         if (String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue)) {
 
                             try{
-                                masterRecord.put(fieldName, duplicateFieldValue);
+                                masterRecord.put(fieldName, objectItem.get(fieldName));
                             } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge set file on master record - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                             }
                         }
                         else if (!String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
@@ -566,7 +587,6 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             }
 
             if (!insertMergeHistories.isEmpty()) {
-
                 Database.SaveResult[] insertResults = Database.insert(insertMergeHistories, false);
                 for (Database.SaveResult insertResult :insertResults) {
                     if (!insertResult.isSuccess()) {
@@ -577,7 +597,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 }
             }
         } catch (Exception e) {
-            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge update fields exception: ' + String.valueOf(e.getMessage()));
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update fields exception: ' + String.valueOf(e.getMessage()));
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
