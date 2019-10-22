@@ -30,6 +30,11 @@
 
 public without sharing class C501_MassMerge_SharedCode { 
 
+    // Available Fields for merging
+    //
+    public static Set<String> AddressTypesAvailable = new Set<String> {'Mailing', 'Shipping', 'Other', 'Billing'};
+    public static Set<String> AddressFieldsAvailable = new Set<String> {'City', 'Country', 'GeocodeAccuracy', 'Latitude', 'Longitude', 'PostalCode', 'State', 'Street'};
+
     // public utility used to detect whether the Non Profit Starter Pack is installed in this instance.
     private static boolean fCheckedForNPSP = false;
     public static boolean IsNPSPInstalled {
@@ -96,8 +101,6 @@ public without sharing class C501_MassMerge_SharedCode {
         if (C501_MassMerge_SharedCode.IsSandbox && (statusCode.contains('INVALID_CROSS_REFERENCE_KEY') || statusCode.contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'))) {
             return false;
         }
-
-
 
         System.debug(LoggingLevel.ERROR, '***** ' + callingMethod + ' Database.SaveResult Error');
         System.debug(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
@@ -333,125 +336,6 @@ public without sharing class C501_MassMerge_SharedCode {
                 if (!result.isSuccess()) {
                     for(Database.Error resultError : result.getErrors()) {
                         C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::InitializeMassMergeInstances');
-                    }                        
-                }
-            }
-        }
-    }
-
-
-    public static void ObjectsMerge_Account(Account masterAccount, List<Account> duplicateAccounts) {
-    }
-
-    public static void ObjectsMerge_Contact(Contact masterContact, List<Contact> duplicateContacts) {
-
-        if (masterContact == null || duplicateContacts == null || duplicateContacts.isEmpty()) {
-            return;
-        }
-
-        // Merge contacts into master
-        String mergeMetricName = 'User Merge Rule Account No Contacts';
-        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
-        strSoql += ' AND Name = \'' + mergeMetricName + '\'';
-
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
-        List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
-
-        if (mergeMetrics.isEmpty()) {
-
-            mergeMetrics.add( new C501_Merge_Metric__c (
-                Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
-                Confidence__c = 90.0,
-                AutoMerge_Percentage__c = 90.0,
-                AutoMerge_Objects__c = 'Account',
-                Source_Report__c = 'User_Merge_Rule_Account_No_Contacts',
-                Source_Object__c = 'Account',
-                Source_Object_Account_Id__c = 'Id',
-                Source_Object_Contact_Id__c = 'Id',
-                Description__c = mergeMetricName,
-                Unique_Id__c = 'User_Merge_Rule_Account_No_Contacts'
-            ));
-
-            Database.SaveResult[] insertResults = Database.insert(mergeMetrics, false);
-            for (Database.SaveResult result : insertResults) {
-                if (!result.isSuccess()) {
-                    for(Database.Error resultError : result.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
-                    }                        
-                }
-            }
-        }
-
-        Set<Id> contactIds = new Set<Id> { masterContact.Id };
-        for (Contact contact :duplicateContacts) {
-            contactIds.add(contact.Id);
-        }
-
-        Map<Id, String> contactAccounts = new Map<Id, String>();
-        for (Contact contact : [
-            SELECT Id, AccountId FROM Contact WHERE Id in :contactIds]) {
-
-            // Contact could have null account if not NPSP household model
-            if (contact.AccountId <> null) {
-                contactAccounts.put(contact.Id, contact.AccountId);
-            }
-        }
-
-        if (contactAccounts.isEmpty() || contactAccounts.values().isEmpty()) {
-            return;
-        }
-
-        Map<Id, Integer> accountMembers = new Map<Id, Integer>();
-        for (AggregateResult result : [
-            SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in :contactAccounts.values() group by AccountId]) {
-
-            String accountId = result.get('AccountId').toString();
-            Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
-            accountMembers.put(accountId, numberOfMembers);
-        }
-
-        // Check to add an account merge request - can not Account merge here because might be in a batch call which is not supported for Account merging
-        String masterAccountId = contactAccounts.get(masterContact.Id);
-        Map<String, C501_Account_Merge__c> accountMergeInserts = new Map<String, C501_Account_Merge__c>();
-        for (String accountId :contactAccounts.values()) {
-
-            if (accountId <> masterAccountId && accountMembers.get(accountId) <= 1) {
-
-                System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact queue empty accountId: ' + accountId + ' for merge into masterAccountId: ' + masterAccountId);
-
-                // Create an account merge because the duplicate account now has no children
-                String maxId = (masterAccountId > accountId) ? masterAccountId : accountId;
-                String minId = (masterAccountId <= accountId) ? masterAccountId : accountId;
-                String uniqueId = mergeMetricName + maxId + minId;
-                accountMergeInserts.put(uniqueId, new C501_Account_Merge__c(
-                    Unique_Id__c = uniqueId,
-                    Merge_Confidence__c = mergeMetrics[0].Confidence__c,
-                    Account__c = masterAccountId,
-                    Merge_Target_Account__c = accountId,
-                    Merge_Metric__c = mergeMetrics[0].Id
-                ));
-            }
-        }
-
-        // Delete any account merges for accounts where contact was merged
-        strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-        strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
-
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
-        List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
-
-        if (!deleteAccountMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
-            delete deleteAccountMerges;
-        }
-
-        // Queue empty household merge
-        if (!accountMergeInserts.isEmpty() && !accountMergeInserts.values().isEmpty()) {
-            Database.SaveResult[] insertResults = Database.insert(accountMergeInserts.values(), false);
-            for (Database.SaveResult result : insertResults) {
-                if (!result.isSuccess()) {
-                    for(Database.Error resultError : result.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
                     }                        
                 }
             }
@@ -786,9 +670,10 @@ public without sharing class C501_MassMerge_SharedCode {
 
     public static Integer GetMaximumLimitSize(Integer groupByNumberFields) {
 
-        Integer percentageMultiple = 9;
-        // Add 100 to allow just more than 90% to make sure to trip the NearSalesforceLimits check
-        Integer maximumLimitSize = ((Limits.getLimitQueryRows() / 10) * percentageMultiple) - Limits.getQueryRows() + 100;
+        Integer percentageMultiple = 96;
+
+        // Allow 96% of limit and if over 95% used will trip the NearSalesforceLimits check
+        Integer maximumLimitSize = ((Limits.getLimitQueryRows() - Limits.getQueryRows()) / 100) * percentageMultiple;
 
         // Check for groupByNumberFields which count 1 query row per group by field for each query row
         //  https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_SOQL_agg_fns.htm
@@ -802,31 +687,31 @@ public without sharing class C501_MassMerge_SharedCode {
     public static Boolean NearSalesforceLimits() {
 
         Boolean nearLimit = false;
-        Integer percentageMultiple = 9;
+        Integer percentageMultiple = 95;
 
         // https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_methods_system_limits.htm
 
-        if (Limits.getAggregateQueries() > ((Limits.getLimitAggregateQueries() / 10) * percentageMultiple)) {
+        if (Limits.getAggregateQueries() > ((Limits.getLimitAggregateQueries() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Aggregate Queries - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getAggregateQueries() + ' of ' + Limits.getLimitAggregateQueries());
             nearLimit = true;
         }
-        if (Limits.getDMLRows() > ((Limits.getLimitDMLRows() / 10) * percentageMultiple)) {
+        if (Limits.getDMLRows() > ((Limits.getLimitDMLRows() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Rows - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getDMLRows() + ' of ' + Limits.getLimitDMLRows());
             nearLimit = true;
         }
-        if (Limits.getDMLStatements() > ((Limits.getLimitDMLStatements() / 10) * percentageMultiple)) {
+        if (Limits.getDMLStatements() > ((Limits.getLimitDMLStatements() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Statments - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getDMLStatements() + ' of ' + Limits.getLimitDMLStatements());
             nearLimit = true;
         }
-        if (Limits.getQueries() > ((Limits.getLimitQueries() / 10) * percentageMultiple)) {
+        if (Limits.getQueries() > ((Limits.getLimitQueries() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Queies - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getQueries() + ' of ' + Limits.getLimitQueries());
             nearLimit = true;
         }
-        if (Limits.getQueryRows() > ((Limits.getLimitQueryRows() / 10) * percentageMultiple)) {
+        if (Limits.getQueryRows() > ((Limits.getLimitQueryRows() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getQueryRows() + ' of ' + Limits.getLimitQueryRows());
             nearLimit = true;
         }
-        if (Limits.getSoslQueries() > ((Limits.getLimitSoslQueries() / 10) * percentageMultiple)) {
+        if (Limits.getSoslQueries() > ((Limits.getLimitSoslQueries() / 100) * percentageMultiple)) {
             System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Sosl Queries - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getSoslQueries() + ' of ' + Limits.getLimitSoslQueries());
             nearLimit = true;
         }

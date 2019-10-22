@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2019, 501Commons.org
+    Copyright (c) 2016, Salesforce.org
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,7 @@
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of 501Commons.org nor the names of
+    * Neither the name of Salesforce.org nor the names of
       its contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
  
@@ -29,9 +29,96 @@
 */
 
 @isTest
-public without sharing class C501_MassMerge_SharedCode_TEST {
-
+public class C501_MassMerge_SharedCode_TEST {
+    
     //==================== TEST METHOD(s) ======================================
-    private static void CodeCoverageTests() {
+
+    @isTest(SeeAllData='true')
+    public static void Contact_MergePhoneTests() {
+
+      Contact masterContact = new Contact(
+        LastName = 'Contact_MergePhone_TESTDATA',
+        Phone = '(111) 111-1111');
+      insert masterContact;
+
+      Contact duplicateContact = new Contact(
+        LastName = 'Contact_MergePhone_TESTDATA',
+        Phone = '(222) 222-2222');
+      insert duplicateContact;
+
+      C501_MassMerge_SharedCode_Contact mergeRequest = new C501_MassMerge_SharedCode_Contact();
+      mergeRequest.ObjectsMerge(masterContact, new List<Contact> { duplicateContact });
+
+      List<Contact> contacts = [SELECT Id, Phone, MobilePhone, HomePhone, OtherPhone FROM Contact WHERE LastName = 'Contact_MergePhone_TESTDATA'];
+      System.Assert(contacts.size() == 1);
+      System.Assert(contacts[0].Phone == '(111) 111-1111');
+      System.Assert(contacts[0].MobilePhone == '(222) 222-2222' || contacts[0].HomePhone == '(222) 222-2222' || contacts[0].OtherPhone == '(222) 222-2222');
     }
+
+    @isTest(SeeAllData='true')
+    public static void Contact_MergeEmailTests() {
+
+      Contact masterContact = new Contact(
+        LastName = 'Contact_MergeEmail_TESTDATA',
+        Email = 'master@master.org');
+      insert masterContact;
+
+      Contact duplicateContact = new Contact(
+        LastName = 'Contact_MergeEmail_TESTDATA',
+        Email = 'duplicate@duplicate.org');
+      insert duplicateContact;
+
+      C501_MassMerge_SharedCode_Contact mergeRequest = new C501_MassMerge_SharedCode_Contact();
+      mergeRequest.ObjectsMerge(masterContact, new List<Contact> { duplicateContact });
+
+      List<Contact> contacts = [SELECT Id, Email FROM Contact WHERE LastName = 'Contact_MergeEmail_TESTDATA'];
+      System.Assert(contacts.size() == 1);
+      System.Assert(contacts[0].Email == 'master@master.org');
+    }
+
+    @isTest(SeeAllData='true')
+    public static void Contact_MergeAddressTests() {
+
+      Contact masterContact = new Contact(
+        LastName = 'Contact_MergeAddress_TESTDATA',
+        MailingStreet = 'master mailing street');
+      insert masterContact;
+
+      Contact duplicateContact = new Contact(
+        LastName = 'Contact_MergeAddress_TESTDATA',
+        MailingStreet = 'duplicate mailing street',
+        OtherStreet = 'duplicate other street');
+      insert duplicateContact;
+
+      C501_MassMerge_SharedCode_Contact mergeRequest = new C501_MassMerge_SharedCode_Contact();
+      mergeRequest.ObjectsMerge(masterContact, new List<Contact> { duplicateContact });
+
+      List<Contact> contacts = [SELECT Id, MailingStreet, OtherStreet FROM Contact WHERE LastName = 'Contact_MergeAddress_TESTDATA'];
+      System.Assert(contacts.size() == 1);
+      System.Assert(contacts[0].MailingStreet == 'master mailing street');
+      System.Assert(contacts[0].OtherStreet == 'duplicate other street');
+    }
+
+    @isTest(SeeAllData='true')
+    public static void Account_MergeAddressTests() {
+
+      Account masterAccount = new Account(
+        Name = 'Account_MergeAddress_TESTDATA',
+        BillingStreet = 'master billing street');
+      insert masterAccount;
+
+      Account duplicateAccount = new Account(
+        Name = 'Account_MergeAddress_TESTDATA',
+        BillingStreet = 'duplicate billing street',
+        ShippingStreet = 'duplicate shipping street');
+      insert duplicateAccount;
+
+      C501_MassMerge_SharedCode_Account mergeRequest = new C501_MassMerge_SharedCode_Account();
+      mergeRequest.ObjectsMerge(masterAccount, new List<Account> { duplicateAccount });
+
+      List<Account> accounts = [SELECT Id, BillingStreet, ShippingStreet FROM Account WHERE Name = 'Account_MergeAddress_TESTDATA'];
+      System.Assert(accounts.size() == 1);
+      System.Assert(accounts[0].BillingStreet == 'master billing street');
+      System.Assert(accounts[0].ShippingStreet == 'duplicate shipping street');
+    }    
 }

@@ -62,6 +62,20 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
     @future
     public static void executeFuture() {
 
+        // User initiated call by clicking the Discover button so clear out potential merges to do a fresh start
+        //
+        List<C501_Account_Merge__c> deleteAccountMerges = [SELECT Id from C501_Account_Merge__c WHERE IsDeleted = false];
+        if (!deleteAccountMerges.isEmpty()) {
+            Database.DeleteResult[] deleteResults = Database.delete(deleteAccountMerges, false);
+            for (Database.DeleteResult deleteResult :deleteResults) {
+                if (!deleteResult.isSuccess()) {
+                    for (Database.Error resultError : deleteResult.getErrors()) {
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MM_Rule_Discover_Accounts::executeFuture');
+                    }
+                }
+            }
+        }
+
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
         C501_MM_Rule_Discover_Accounts.get().ProcessMergeMetrics(strSoql);
     }

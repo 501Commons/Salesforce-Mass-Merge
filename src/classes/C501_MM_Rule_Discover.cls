@@ -209,9 +209,12 @@ public class C501_MM_Rule_Discover {
         // Get FK - Foriegn Key Object
         String foriegnKey;
         List<String> foriegnKeyObjects = reportMetadata.getReportType().getType().split('\\.');
+        System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover::ProcessReport - foriegnKeyObjects: ' + foriegnKeyObjects);
         if (!foriegnKeyObjects.isEmpty()) {
             foriegnKey = foriegnKeyObjects[foriegnKeyObjects.size() - 1].replace('__c', '__r.');
         }
+
+        System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover::ProcessReport - foriegnKey: ' + foriegnKey);
 
         Boolean usingAddressColumns = false;
         List<String> detailColumnsChecked = new List<String>();
@@ -338,6 +341,7 @@ public class C501_MM_Rule_Discover {
         }
 
         String strSoqlWhere = ' WHERE ' + String.join(whereFields, ' and ');
+        strSoqlWhere += C501_MassMerge_SharedCode_Account.WhereFilterByMerges(mergeMetric.Source_Object_Account_Id__c);
 
         // Add aggregate check
         List<String> groupByFields = new List<String>();
@@ -590,7 +594,10 @@ public class C501_MM_Rule_Discover {
         // Add filters
         for (Reports.ReportFilter reportFilter :reportFilters) {
             String whereField = this.CheckReportOperator(mergeMetric, foriegnKey, reportFilter.getColumn(), reportFilter.getOperator(), reportFilter.getValue());
+
             if (!String.isBlank(whereField)) {
+
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts whereField: ' + whereField);
 
                 // Check if value contains a list of Strings
                 if (reportFilter.getValue().contains(',')) {
@@ -599,11 +606,14 @@ public class C501_MM_Rule_Discover {
                     whereField = this.CheckReportColumnName(mergeMetric, foriegnKey, reportFilter.getColumn(), true) + ' in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(whereInValues);
                 }
 
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts whereField: ' + whereField);
+
                 whereFields.add(whereField);
             }
         }
 
         String strSoqlWhere = ' WHERE ' + String.join(whereFields, ' and ');
+        strSoqlWhere += C501_MassMerge_SharedCode_Contact.WhereFilterByMerges(mergeMetric.Source_Object_Contact_Id__c);
 
         // Add aggregate check
         List<String> groupByFields = new List<String>();
@@ -707,6 +717,11 @@ public class C501_MM_Rule_Discover {
                     return 'AccountId';
                 }
             }
+        }
+
+        // Check if Source Object in the Column Name
+        if (columnFieldName.startsWithIgnoreCase(mergeMetric.Source_Object__c + '.')) {
+            columnFieldName = columnFieldName.remove(mergeMetric.Source_Object__c + '.');
         }
 
         // Check for FK - Foriegn Key

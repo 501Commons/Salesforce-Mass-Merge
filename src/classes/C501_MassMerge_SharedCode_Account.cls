@@ -42,6 +42,68 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
     public class C501_MassMerge_SharedCode_AccountException extends Exception {}
 
+    public static String WhereFilterByMerges(String objectId) {
+
+        // Where update to exclude previously found Accounts
+        //
+        String strSoqlWhere = '';
+
+        Datetime currentDateTime = Datetime.now();
+        Integer current24Hour = Integer.valueOf(currentDateTime.format('HH'));
+        List<Id> listAccountIds = new List<Id>();
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Account::WhereFilterByMerges strSoql: ' + strSoql);
+        for (C501_Account_Merge__c mergeRecord :Database.query(strSoql)) {
+
+            Boolean addAccount = false;
+            Boolean addAccountTarget = false;
+
+            switch on math.mod(current24Hour, 3) {
+                when 1 {
+                    addAccount = true;
+                }
+                when 2 {
+                    addAccountTarget = true;
+                }
+                when else {
+                    addAccount = true;
+                    addAccountTarget = true;
+                }
+            }
+
+            if (addAccount && !listAccountIds.contains(mergeRecord.Account__c)) {
+                listAccountIds.add(mergeRecord.Account__c);
+            }
+            if (addAccountTarget && !listAccountIds.contains(mergeRecord.Merge_Target_Account__c)) {
+                listAccountIds.add(mergeRecord.Merge_Target_Account__c);
+            }
+        }
+
+        if (!listAccountIds.isEmpty()) {
+
+            Integer offset = (listAccountIds.size() < 100) ? listAccountIds.size() - 1 : listAccountIds.size() / 24;
+            Integer startIndex = (listAccountIds.size() < 100) ? 0 : current24Hour * offset;
+            Integer endIndex = (offset == 24) ? listAccountIds.size() : startIndex + offset;
+
+            // Where max characters is 4000
+            strSoqlWhere += ' and (NOT ' + objectId + ' in (';
+            Boolean addComma = false;
+            while (startIndex < endIndex && strSoqlWhere.length() < 3950) {
+                if (addComma) {
+                    strSoqlWhere += ',';
+                }
+                else {
+                    addComma = true;
+                }
+                strSoqlWhere += '\'' + listAccountIds[startIndex++] + '\'';
+            }
+            strSoqlWhere += '))';
+        }
+
+        return strSoqlWhere;
+    }
+
     // the list of Accounts
     public List<SelectOption> ListObjectsWithConfidence(String mergeRule, Decimal fromMergeConfidence, Decimal toMergeConfidence) {
 
@@ -223,7 +285,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
 
         if (!deleteAccountMerges.isEmpty()) {
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
+           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Account Merges: ' + deleteAccountMerges);
             delete deleteAccountMerges;
         }
 
@@ -359,6 +421,47 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
     }
 
+    private void BackfillBlankFields(SObject updateRecord, Set<String> blankFields, List<String> availableFieldValues) {
+
+        for (String fieldName :blankFields) {
+
+            if (availableFieldValues.isEmpty()) {
+                break;
+            }
+
+            String fieldValue = String.valueOf(updateRecord.get(fieldName));
+            if (String.isBlank(fieldValue)) {
+
+                try{
+                    String availableFieldValue = availableFieldValues[0];
+                    availableFieldValues.remove(availableFieldValues.indexOf(availableFieldValue));
+                    updateRecord.put(fieldName, availableFieldValue);
+                } catch (Exception e) {
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Object::ObjectsFieldMerge_Account_BackfillFields Update Merge Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                }
+            }
+        }
+    }
+
+    private void BackfillCheckFields(String fieldName, String updateFieldValue, String availableFieldValue, Set<String> usedFieldValues, Set<String> blankFields, List<String> availableFieldValues ) {
+
+        if (!String.isBlank(updateFieldValue)) {
+
+            usedFieldValues.add(updateFieldValue);
+
+            while (availableFieldValues.contains(updateFieldValue)) {
+                availableFieldValues.remove(availableFieldValues.indexOf(updateFieldValue));
+            }
+        }
+        else {
+            blankFields.add(fieldName);
+        }
+
+        if (!String.isBlank(availableFieldValue) && !usedFieldValues.contains(availableFieldValue)) {
+            availableFieldValues.add(availableFieldValue);
+        }
+    }
+
     public void ObjectsFieldMerge(Account masterObject, List<Account> duplicateObjects) {
 
         Set<Id> mergeCandidates = new Set<Id> { masterObject.Id };
@@ -432,10 +535,13 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
             // Merge fields into master
             SObject masterRecord = null;
-            Set<String> emailsUsed = new Set<String>();
-            Set<String> emailsAvailable = new Set<String>();
-            Set<String> phonesUsed = new Set<String>();
-            Set<String> phonesAvailable = new Set<String>();
+            Set<String> masterUsedEmailValues = new Set<String>();
+            Set<String> masterBlankEmailFields = new Set<String>();
+            List<String> availableEmailValues = new List<String>();
+            Set<String> masterUsedPhoneValues = new Set<String>();
+            Set<String> masterBlankPhoneFields = new Set<String>();
+            List<String> availablePhoneValues = new List<String>();
+            Set<String> addressTypesSkip = new Set<String>();
 
             // Assign Master Record
             for (SObject objectItem :objectList) {
@@ -444,9 +550,37 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 if (masterObject.Id == objectItem.get('Id')) {
 
                     masterRecord = objectItem;
+
+                    // Check Address
+                    //
+                    for (String addressType :C501_MassMerge_SharedCode_Object.AddressTypesAvailable) {
+                        for (String addressField :C501_MassMerge_SharedCode_Object.AddressFieldsAvailable) {
+
+                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - check address field: ' + addressType + addressField);
+
+                            try {
+                                if (masterRecord.get(addressType + addressField) != null &&
+                                    !String.isBlank(String.valueOf(masterRecord.get(addressType + addressField)))) {
+
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
+
+                                    addressTypesSkip.add(addressType);
+                                    break;
+                                }
+                            }
+                            catch (Exception e) {
+                                if (!e.getMessage().contains('Invalid field')) {
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge check address field exception: ' + String.valueOf(e.getMessage()));
+                                }
+                            }
+                        }
+                    }
+
                     break;
                 }
             }
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
 
             if (masterRecord == null) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
@@ -466,89 +600,36 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     String masterFieldValue = String.valueOf(masterRecord.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
 
+                    System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
+
                     // Handle Phone
-                    if (fieldName.equalsIgnoreCase('HomePhone') || fieldName.equalsIgnoreCase('MobilePhone') || fieldName.equalsIgnoreCase('Phone') || fieldName.equalsIgnoreCase('OtherPhone') || fieldName.equalsIgnoreCase('npo02__HouseholdPhone__c') || fieldName.equalsIgnoreCase('npe01__WorkPhone__c')) {
+                    //      Future Update: Change to if fieldName contains Phone and Datatype = Phone or can determine if a Phone field based on format? xxxx-xxx
+                    if (C501_MassMerge_SharedCode_Object.ObjectsFieldMerge_Account_HandlePhone(fieldName, fieldMap.get(fieldName))) {
 
-                        if (!String.isBlank(masterFieldValue)) {
-                            phonesUsed.add(masterFieldValue);
-
-                            if (phonesAvailable.contains(masterFieldValue)) {
-                                phonesAvailable.remove(masterFieldValue);
-                            }
-                        }
-
-                        if (!String.isBlank(duplicateFieldValue) && !phonesUsed.contains(duplicateFieldValue)) {
-                            phonesAvailable.add(duplicateFieldValue);
-                        }
-
-                        if (String.isBlank(masterFieldValue) && !phonesAvailable.isEmpty()) {
-                            
-                            String phoneValue;
-                            for (String setValue :phonesAvailable) {
-                                phoneValue = setValue;
-                                break;
-                            }
-                            phonesAvailable.remove(phoneValue);
-
-                            try{
-                                masterRecord.put(fieldName, phoneValue);
-                                phonesUsed.add(phoneValue);
-                                skipMasterFieldUpdate = true;
-                            } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Phone Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
-                            }
-                        }
+                        this.BackfillCheckFields(fieldName, masterFieldValue, duplicateFieldValue, masterUsedPhoneValues, masterBlankPhoneFields, availablePhoneValues);
                     }
 
                     // Handle Email
-                    if (fieldName.equalsIgnoreCase('Email') || fieldName.equalsIgnoreCase('npe01__WorkEmail__c') || fieldName.equalsIgnoreCase('npe01__AlternateEmail__c') || fieldName.equalsIgnoreCase('npe01__HomeEmail__c')) {
+                    //      Future Update: Change to if fieldName contains Email and Datatype = Email
+                    if (C501_MassMerge_SharedCode_Object.ObjectsFieldMerge_Account_HandleEmail(fieldName, fieldMap.get(fieldName))) {
 
-                        if (!String.isBlank(masterFieldValue)) {
-                            emailsUsed.add(masterFieldValue);
-
-                            if (emailsAvailable.contains(masterFieldValue)) {
-                                emailsAvailable.remove(masterFieldValue);
-                            }
-                        }
-
-                        if (!String.isBlank(duplicateFieldValue) && !emailsUsed.contains(duplicateFieldValue)) {
-                            emailsAvailable.add(duplicateFieldValue);
-                        }
-
-                        if (String.isBlank(masterFieldValue) && !emailsAvailable.isEmpty()) {
-                            
-                            String emailValue;
-                            for (String setValue :emailsAvailable) {
-                                emailValue = setValue;
-                                break;
-                            }
-                            emailsAvailable.remove(emailValue);
-
-                            try{
-                                masterRecord.put(fieldName, emailValue);
-                                emailsUsed.add(emailValue);
-                                skipMasterFieldUpdate = true;
-                            } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Email Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
-                            }
-                        }
+                        this.BackfillCheckFields(fieldName, masterFieldValue, duplicateFieldValue, masterUsedEmailValues, masterBlankEmailFields, availableEmailValues);
                     }
 
-                    // Skip Address because don't want to run the risk of blending different types of addresses together
-                    // Future Change - update all or none of an address category
-                    if ( (fieldName.startsWithIgnoreCase('Mailing') || fieldName.startsWithIgnoreCase('Shipping') || fieldName.startsWithIgnoreCase('Other') || fieldName.startsWithIgnoreCase('Billing')) &&
-                        (fieldName.endsWithIgnoreCase('Address') || fieldName.endsWithIgnoreCase('City') || fieldName.endsWithIgnoreCase('Country') || fieldName.endsWithIgnoreCase('GeocodeAccuracy') || fieldName.endsWithIgnoreCase('Latitude') || fieldName.endsWithIgnoreCase('Longitude') || fieldName.endsWithIgnoreCase('PostalCode') || fieldName.endsWithIgnoreCase('State') || fieldName.endsWithIgnoreCase('Street')) ) {
-
-                        // Check Master - if all related address fields are blank then allow merge fields
-                        // TBD
-                        
-                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
-                        skipMasterFieldUpdate = true;
+                    // Handle Address
+                    //      Check to skip address if the master a valid value for any of the address type fields
+                    //
+                    for (String addressType : addressTypesSkip) {
+                        for (String addressField : C501_MassMerge_SharedCode.AddressFieldsAvailable) {
+                            if (fieldName.equalsIgnoreCase(addressType + addressField)) {
+                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
+                                skipMasterFieldUpdate = true;
+                            }
+                        }
                     }
 
                     Boolean writeHistoryRecord = false;
                     if (skipMasterFieldUpdate) {
-
                         if (!String.isBlank(duplicateFieldValue)) {
                             writeHistoryRecord = true;
                         }
@@ -560,7 +641,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                             try{
                                 masterRecord.put(fieldName, objectItem.get(fieldName));
                             } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge set file on master record - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                             }
                         }
                         else if (!String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
@@ -578,6 +659,14 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     }
                 }
             }
+
+            // Check to backfill emails
+            //
+            this.BackfillBlankFields(masterRecord, masterBlankEmailFields, availableEmailValues);
+
+            // Check to backfill phones
+            //
+            this.BackfillBlankFields(masterRecord, masterBlankPhoneFields, availablePhoneValues);
 
             Database.SaveResult updateResult = Database.update((Account)masterRecord, false);
             if (!updateResult.isSuccess()) {
@@ -609,7 +698,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             return;
         }
 
-        C501_MassMerge_SharedCode.ObjectsMerge_Account(masterObject, duplicateObjects);
+        C501_MassMerge_SharedCode_Object.ObjectsMerge_Account(masterObject, duplicateObjects);
  
         // Merge fields into master
         ObjectsFieldMerge(masterObject, duplicateObjects);
