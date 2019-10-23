@@ -35,21 +35,6 @@ public without sharing class C501_MM_ListView_Controller {
 
     public PageReference discoverTrigger() {
 
-        // User initiated call by clicking the Discover button so clear out potential contact merges to do a fresh start
-        //  Need to delete contacts merges here before calling the 2 seperate contact futures, account merges are cleared out in the account future call since there is only 1
-        //
-        List<C501_Contact_Merge__c> deleteContactMerges = [SELECT Id from C501_Contact_Merge__c WHERE IsDeleted = false];
-        if (!deleteContactMerges.isEmpty()) {
-          Database.DeleteResult[] deleteResults = Database.delete(deleteContactMerges, false);
-          for (Database.DeleteResult deleteResult :deleteResults) {
-              if (!deleteResult.isSuccess()) {
-                  for (Database.Error resultError : deleteResult.getErrors()) {
-                      C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::discoverTrigger');
-                  }
-              }
-          }
-        }
-
         C501_MM_Rule_Discover_Accounts.executeFuture();
         C501_MM_Rule_Discover_ContactsAccount.executeFuture();
         C501_MM_Rule_Discover_ContactsAccounts.executeFuture();

@@ -97,6 +97,7 @@ public class C501_MM_Rule_Discover_ContactsAccount implements Schedulable {
 		//
 
         strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
@@ -148,6 +149,10 @@ public class C501_MM_Rule_Discover_ContactsAccount implements Schedulable {
             }
 
             discover.ProcessReport(reportId, mergeMetric, 'Contacts Within Account');
+            if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                System.debug(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
+                break;
+            }
         }
     }
 }

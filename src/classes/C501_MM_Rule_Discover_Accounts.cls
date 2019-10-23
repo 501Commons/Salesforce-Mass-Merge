@@ -62,20 +62,6 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
     @future
     public static void executeFuture() {
 
-        // User initiated call by clicking the Discover button so clear out potential merges to do a fresh start
-        //
-        List<C501_Account_Merge__c> deleteAccountMerges = [SELECT Id from C501_Account_Merge__c WHERE IsDeleted = false];
-        if (!deleteAccountMerges.isEmpty()) {
-            Database.DeleteResult[] deleteResults = Database.delete(deleteAccountMerges, false);
-            for (Database.DeleteResult deleteResult :deleteResults) {
-                if (!deleteResult.isSuccess()) {
-                    for (Database.Error resultError : deleteResult.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MM_Rule_Discover_Accounts::executeFuture');
-                    }
-                }
-            }
-        }
-
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
         C501_MM_Rule_Discover_Accounts.get().ProcessMergeMetrics(strSoql);
     }
@@ -111,6 +97,7 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
 		//
 
         strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
@@ -162,6 +149,10 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
             }
 
             discover.ProcessReport(reportId, mergeMetric, 'Account');
+            if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                System.debug(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
+                break;
+            }
         }
     }
 }

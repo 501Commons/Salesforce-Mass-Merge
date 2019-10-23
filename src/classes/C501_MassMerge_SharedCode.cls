@@ -136,7 +136,7 @@ public without sharing class C501_MassMerge_SharedCode {
     public static void OutputDebugLogClear() {
         List<C501_Debug_Log__c> deleteDebugLogs = [SELECT Id FROM C501_Debug_Log__c];
         if (!deleteDebugLogs.isEmpty()) {
-            delete deleteDebugLogs;
+            Database.delete(deleteDebugLogs, false);
         }
     }
 
@@ -164,9 +164,9 @@ public without sharing class C501_MassMerge_SharedCode {
             return '(\'\')';
         }
 
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::GetSafeSoqlList strCleanList: ' + strCleanList);
         String safeSoqlList = '(\'' + String.join(strCleanList, '\',\'') + '\')';
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::GetSafeSoqlList safeSoqlList: ' + safeSoqlList);
+
+        C501_MassMerge_SharedCode.NearSalesforceLimits();
 
         return safeSoqlList;
     }
@@ -243,6 +243,8 @@ public without sharing class C501_MassMerge_SharedCode {
             strSoql += ' AND Name LIKE \'TESTDATA%\'';
         }
 
+        C501_MassMerge_SharedCode.NearSalesforceLimits();
+
         return strSoql;
     }
 
@@ -261,6 +263,8 @@ public without sharing class C501_MassMerge_SharedCode {
             strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
         }
 
+        C501_MassMerge_SharedCode.NearSalesforceLimits();
+
         return strSoql;
     }
 
@@ -278,6 +282,8 @@ public without sharing class C501_MassMerge_SharedCode {
         if (Test.isRunningTest()) {        
             strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
         }
+
+        C501_MassMerge_SharedCode.NearSalesforceLimits();
 
         return strSoql;
     }
@@ -670,15 +676,16 @@ public without sharing class C501_MassMerge_SharedCode {
 
     public static Integer GetMaximumLimitSize(Integer groupByNumberFields) {
 
-        Integer percentageMultiple = 96;
+        Integer percentageMultiple = 95;
 
-        // Allow 96% of limit and if over 95% used will trip the NearSalesforceLimits check
         Integer maximumLimitSize = ((Limits.getLimitQueryRows() - Limits.getQueryRows()) / 100) * percentageMultiple;
+
+        C501_MassMerge_SharedCode.NearSalesforceLimits();
 
         // Check for groupByNumberFields which count 1 query row per group by field for each query row
         //  https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_SOQL_agg_fns.htm
         if (groupByNumberFields > 1) {
-            return maximumLimitSize / groupByNumberFields;
+            return maximumLimitSize / (groupByNumberFields + 1);
         }
 
         return maximumLimitSize;
@@ -687,32 +694,37 @@ public without sharing class C501_MassMerge_SharedCode {
     public static Boolean NearSalesforceLimits() {
 
         Boolean nearLimit = false;
-        Integer percentageMultiple = 95;
+        Integer percentageMultiple = 90;
 
         // https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_methods_system_limits.htm
 
         if (Limits.getAggregateQueries() > ((Limits.getLimitAggregateQueries() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Aggregate Queries - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getAggregateQueries() + ' of ' + Limits.getLimitAggregateQueries());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Aggregate Queries ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getAggregateQueries() + ' of ' + Limits.getLimitAggregateQueries());
             nearLimit = true;
         }
+
         if (Limits.getDMLRows() > ((Limits.getLimitDMLRows() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Rows - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getDMLRows() + ' of ' + Limits.getLimitDMLRows());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Rows ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getDMLRows() + ' of ' + Limits.getLimitDMLRows());
             nearLimit = true;
         }
+
         if (Limits.getDMLStatements() > ((Limits.getLimitDMLStatements() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Statments - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getDMLStatements() + ' of ' + Limits.getLimitDMLStatements());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - DML Statments ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getDMLStatements() + ' of ' + Limits.getLimitDMLStatements());
             nearLimit = true;
         }
+
         if (Limits.getQueries() > ((Limits.getLimitQueries() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Queies - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getQueries() + ' of ' + Limits.getLimitQueries());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Queies ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getQueries() + ' of ' + Limits.getLimitQueries());
             nearLimit = true;
         }
+
         if (Limits.getQueryRows() > ((Limits.getLimitQueryRows() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getQueryRows() + ' of ' + Limits.getLimitQueryRows());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Query Rows ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getQueryRows() + ' of ' + Limits.getLimitQueryRows());
             nearLimit = true;
         }
+
         if (Limits.getSoslQueries() > ((Limits.getLimitSoslQueries() / 100) * percentageMultiple)) {
-            System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Sosl Queries - Query Rows ' + String.valueOf(percentageMultiple) + '0% of Limit - ' + Limits.getSoslQueries() + ' of ' + Limits.getLimitSoslQueries());
+            System.debug(LoggingLevel.WARN, '***** C501_MassMerge_SharedCode::NearSalesforceLimits - Sosl Queries ' + String.valueOf(percentageMultiple) + '% of Limit - ' + Limits.getSoslQueries() + ' of ' + Limits.getLimitSoslQueries());
             nearLimit = true;
         }
 

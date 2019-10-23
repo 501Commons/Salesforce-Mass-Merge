@@ -78,6 +78,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
 		//
 
         strSoql += ' ORDER BY Last_Merge_Date__c ASC';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 

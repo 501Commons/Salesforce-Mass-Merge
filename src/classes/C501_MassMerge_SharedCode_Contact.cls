@@ -54,12 +54,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
         System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Contact::WhereFilterByMerges strSoql: ' + strSoql);
+        Integer hourMode = math.mod(current24Hour, 3);
         for (C501_Contact_Merge__c mergeRecord :Database.query(strSoql)) {
 
             Boolean addContact = false;
             Boolean addContactTarget = false;
 
-            switch on math.mod(current24Hour, 3) {
+            switch on hourMode {
                 when 1 {
                     addContact = true;
                 }
@@ -82,23 +83,27 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         if (!listContactIds.isEmpty()) {
 
-            Integer offset = (listContactIds.size() < 100) ? listContactIds.size() - 1 : listContactIds.size() / 24;
-            Integer startIndex = (listContactIds.size() < 100) ? 0 : current24Hour * offset;
-            Integer endIndex = (offset == 24) ? listContactIds.size() : startIndex + offset;
+            Integer offset = (listContactIds.size() <= (24 * 4)) ? listContactIds.size() - 1 : listContactIds.size() / 24;
+            Integer startIndex = (listContactIds.size() < (24 * 4)) ? 0 : current24Hour * offset;
+            Integer endIndex = startIndex + offset > listContactIds.size() - 1 ? listContactIds.size() - 1 : startIndex + offset;
 
-            // Where max characters is 4000
-            strSoqlWhere += ' and (NOT ' + objectId + ' in (';
-            Boolean addComma = false;
-            while (startIndex < endIndex && strSoqlWhere.length() < 3950) {
-                if (addComma) {
+            Boolean firstItem = true;
+
+            // Salesforce where max length is 4000
+            while (startIndex <= endIndex && strSoqlWhere.length() < 3950) {
+                if (!firstItem) {
                     strSoqlWhere += ',';
                 }
                 else {
-                    addComma = true;
+                    strSoqlWhere += ' and (NOT ' + objectId + ' IN (';
+                    firstItem = false;
                 }
                 strSoqlWhere += '\'' + listContactIds[startIndex++] + '\'';
             }
-            strSoqlWhere += '))';
+
+            if (!firstItem) {
+                strSoqlWhere += '))';
+            }
         }
 
         return strSoqlWhere;
@@ -188,6 +193,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
         strSoql += ' AND Merge_Metric__r.Name = \'' + mergeMetricName + '\'';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
 
@@ -261,6 +267,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
         strSoql += ' AND Merge_Metric__r.Name = :mergeMetricName AND Merge_Action__c <> \'Ignore\'';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
 
@@ -518,6 +525,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         strSoql += ' Id from Contact where Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeCandidates);
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
         
         List<Contact> objectList;
         try {
@@ -630,7 +638,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                     Boolean writeHistoryRecord = false;
                     if (skipMasterFieldUpdate) {
-                        if (!String.isBlank(duplicateFieldValue)) {
+                        if (!String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
                             writeHistoryRecord = true;
                         }
                     }
@@ -722,6 +730,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
         strSoql += ' AND (Contact__c = null OR Merge_Target_Contact__c = null OR Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ')';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
         

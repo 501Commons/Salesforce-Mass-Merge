@@ -74,6 +74,7 @@ public class C501_MM_Rule_Discover {
 		//
 
         strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
@@ -133,7 +134,7 @@ public class C501_MM_Rule_Discover {
 
             List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqlDeleteAccountMerges);
             if (!deleteAccountMerges.isEmpty()) {
-                Database.delete(deleteAccountMerges, False);
+                Database.delete(deleteAccountMerges, false);
             }
 
             String strSoqlDeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
@@ -146,7 +147,7 @@ public class C501_MM_Rule_Discover {
             if (!deleteContactMerges.isEmpty()) {
 
                 System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete contactMerges: ' + deleteContactMerges);
-                Database.delete(deleteContactMerges, False);
+                Database.delete(deleteContactMerges, false);
             }
         }
 
@@ -360,59 +361,142 @@ public class C501_MM_Rule_Discover {
         }
 
         String strSoqlGroupBy = ' GROUP BY ' + String.join(groupByFields, ', ');
-        String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Account_Id__c + ') > 1 ';
         String strSoqlOrderBy = ' ORDER BY Count(' + mergeMetric.Source_Object_Account_Id__c + ') DESC';
-
-        String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
 
         System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover:ProcessReportByAccounts aggregate SOQL');
         System.debug(LoggingLevel.DEBUG, strSoqlSelect);
         System.debug(LoggingLevel.DEBUG, strSoqlFrom);
         System.debug(LoggingLevel.DEBUG, strSoqlWhere);
         System.debug(LoggingLevel.DEBUG, strSoqlGroupBy);
-        System.debug(LoggingLevel.DEBUG, strSoqlHaving);
         System.debug(LoggingLevel.DEBUG, strSoqlOrderBy);
-        System.debug(LoggingLevel.DEBUG, strSoqlLimit);
 
-        AggregateResult[] allAggregatedByAccounts;
-        try {
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+        Integer maxCountInterval = 10;
+        for (Integer countIndex = 2; countIndex <= maxCountInterval; countIndex++) {
 
-		    allAggregatedByAccounts = Database.Query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-        }
-        catch (System.LimitException exLimit) {
-            System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-            System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL System.LimitException Error: ' + exLimit.getMessage());
-            return;
-        }
-        catch (Exception ex) {
-            System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-            System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL Error: ' + ex.getMessage());
-            return;
-        }
+            String countInterval = (countIndex >= maxCountInterval) ? ' >= ' + String.valueOf(countIndex) : ' = ' + String.valueOf(countIndex);
 
-        // Filter out account ids already associated with merge metric
-        Set<Id> existingAccountIds = new Set<Id>();
+            if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                System.debug(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts Near Salesforce Limits so kick out on processing countInterval: ' + countInterval + ' of maxCountInterval: ' + String.valueOf(maxCountInterval));
+                break;
+            }
 
-        String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-        strSoql += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+            String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Account_Id__c + ') ' + countInterval;
+            System.debug(LoggingLevel.DEBUG, strSoqlHaving);
+            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
+            System.debug(LoggingLevel.DEBUG, strSoqlLimit);
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoql);
+            AggregateResult[] allAggregatedByAccounts;
+            try {
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                allAggregatedByAccounts = Database.Query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+            }
+            catch (System.LimitException exLimit) {
+                System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL System.LimitException Error: ' + exLimit.getMessage());
+                return;
+            }
+            catch (Exception ex) {
+                System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL Error: ' + ex.getMessage());
+                return;
+            }
 
-        for(C501_Account_Merge__c existingMerge : Database.query(strSoql)) {
-                existingAccountIds.add(existingMerge.Account__c);
-                existingAccountIds.add(existingMerge.Merge_Target_Account__c);
-        }
+            if (allAggregatedByAccounts.isEmpty()) {
+                continue;
+            }
 
-        // Check for Full Contact Match
-        //
-        Map<Id,String> accountContacts = new Map<Id,String>();
-        if (fullContactMatch) {
+            // Filter out account ids already associated with merge metric
+            Set<Id> existingAccountIds = new Set<Id>();
 
-            Set<Id> mergeAccountIds = new Set<Id>();
-            String minId, maxId;
+            String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+            strSoql += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoql);
+
+            for(C501_Account_Merge__c existingMerge : Database.query(strSoql)) {
+                    existingAccountIds.add(existingMerge.Account__c);
+                    existingAccountIds.add(existingMerge.Merge_Target_Account__c);
+            }
+
+            // Check for Full Contact Match
+            //
+            Map<Id,String> accountContacts = new Map<Id,String>();
+            if (fullContactMatch) {
+
+                Set<Id> mergeAccountIds = new Set<Id>();
+                String minId, maxId;
+                for (AggregateResult result : allAggregatedByAccounts)  {
+                    
+                    maxId = result.get('MaxId').toString();
+                    minId = result.get('MinId').toString();
+
+                    if (String.isBlank(maxId) || String.isBlank(minId) || maxId == minId) {
+                        continue;
+                    }
+
+                    if (existingAccountIds.contains(maxId) || existingAccountIds.contains(minId)) {
+                        continue;
+                    }
+
+                    mergeAccountIds.add(maxId);
+                    mergeAccountIds.add(minId);
+                }
+
+                // Get Household Sizes
+                Map<Id, Integer> existingAccountSizes = new Map<Id, Integer>();
+
+                strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIds);
+                strSoql += ' group by AccountId HAVING Count(Id) > 1 LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+                for (AggregateResult result : Database.query(strSoql)) {
+
+                    String accountId = result.get('AccountId').toString();
+                    Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
+                    existingAccountSizes.put(accountId, numberOfMembers);
+                }
+
+                Set<Id> mergeAccountIdsMatching = new Set<Id>();
+                for (AggregateResult result : allAggregatedByAccounts)  {
+                    
+                    maxId = result.get('MaxId').toString();
+                    minId = result.get('MinId').toString();
+
+                    if (!existingAccountSizes.containsKey(maxId) || !existingAccountSizes.containsKey(minId)) {
+                        continue;
+                    }
+
+                    // Make sure household contact count equal
+                    if (existingAccountSizes.get(maxId) <> existingAccountSizes.get(minId)) {
+                        continue;
+                    }
+
+                    mergeAccountIdsMatching.add(maxId);
+                    mergeAccountIdsMatching.add(minId);
+                }
+
+                strSoql = 'SELECT AccountId, FirstName, LastName, Birthdate, Gender__c FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIdsMatching);
+                strSoql += ' ORDER BY AccountId, FirstName, LastName, Birthdate, Gender__c DESC LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+                for (Contact contactInfo :Database.query(strSoql)) {
+                    String contactsInfo;
+                    if (accountContacts.containsKey(contactInfo.AccountId)) {
+                        contactsInfo = accountContacts.remove(contactInfo.AccountId);
+                    }
+
+                    contactsInfo += 
+                        (String.isNotBlank(contactInfo.FirstName) ? contactInfo.FirstName.mid(1,1) : '')
+                        + (String.isNotBlank(contactInfo.LastName) ? contactInfo.LastName : '')
+                        + (contactInfo.Birthdate <> null ? String.valueOf(contactInfo.Birthdate) : '')
+                        + (String.isNotBlank(contactInfo.Gender__c) ? contactInfo.Gender__c : '');
+
+                    accountContacts.put(contactInfo.AccountId, contactsInfo);
+                }
+            }
+
+            List<C501_Account_Merge_Member__c> insertMergeMembers = new List<C501_Account_Merge_Member__c>();
+            Map<String, C501_Account_Merge__c> mergeAccounts = new Map<String, C501_Account_Merge__c>();
+            String uniqueId, minId, maxId;
             for (AggregateResult result : allAggregatedByAccounts)  {
-                
                 maxId = result.get('MaxId').toString();
                 minId = result.get('MinId').toString();
 
@@ -420,147 +504,75 @@ public class C501_MM_Rule_Discover {
                     continue;
                 }
 
+                // Check if merge metric already created
                 if (existingAccountIds.contains(maxId) || existingAccountIds.contains(minId)) {
                     continue;
                 }
 
-                mergeAccountIds.add(maxId);
-                mergeAccountIds.add(minId);
-            }
+                // Check if Full Contact Match meaning every contact in the households have to match
+                if (fullContactMatch) {
+                    if (!accountContacts.containsKey(maxId) || !accountContacts.containsKey(minId)) {
+                        continue;
+                    }
 
-            // Get Household Sizes
-            Map<Id, Integer> existingAccountSizes = new Map<Id, Integer>();
-            for (AggregateResult result : [
-                SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in :mergeAccountIds group by AccountId HAVING Count(Id) > 1]) {
-
-                String accountId = result.get('AccountId').toString();
-                Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
-                existingAccountSizes.put(accountId, numberOfMembers);
-            }
-
-            Set<Id> mergeAccountIdsMatching = new Set<Id>();
-            for (AggregateResult result : allAggregatedByAccounts)  {
-                
-                maxId = result.get('MaxId').toString();
-                minId = result.get('MinId').toString();
-
-                if (!existingAccountSizes.containsKey(maxId) || !existingAccountSizes.containsKey(minId)) {
-                    continue;
+                    // Validate Contacts same between both accounts
+                    if (accountContacts.get(maxId) <> accountContacts.get(minId)) {
+                        continue;
+                    }
                 }
 
-                // Make sure household contact count equal
-                if (existingAccountSizes.get(maxId) <> existingAccountSizes.get(minId)) {
-                    continue;
-                }
+                uniqueId = mergeMetric.Name + maxId + minId;
+                mergeAccounts.put(uniqueId, new C501_Account_Merge__c(
+                    Unique_Id__c = uniqueId,
+                    Merge_Confidence__c = mergeMetric.Confidence__c,
+                    Account__c = minId,
+                    Merge_Target_Account__c = maxId,
+                    Merge_Metric__c = mergeMetric.Id
+                ));
 
-                mergeAccountIdsMatching.add(maxId);
-                mergeAccountIdsMatching.add(minId);
-            }
 
-            List<Contact> contacts = [
-                SELECT AccountId, FirstName, LastName, Birthdate, Gender__c
-                FROM Contact
-                WHERE AccountId in :mergeAccountIdsMatching
-                ORDER BY AccountId, FirstName, LastName, Birthdate, Gender__c DESC];
+                Integer matches = Integer.valueOf(result.get('Matches'));
 
-            if (contacts.isEmpty()) {
-                return;
-            }
+                // Monitor matches greater than 2 because that means there are possibly some accounts between min/max that are not getting included in a merge candidate
+                // Investigate doing some post processing of the accounts between min/max to see if they can be included in merge candidates
+                if (matches > 2) {
+                    insertMergeMembers.add(
+                        new C501_Account_Merge_Member__c(
+                            Account__c = minId,
+                            Merge_Metric__c = mergeMetric.Id,
+                            Unique_Id__c = mergeMetric.Id + minId,
+                            Potential_Merges__c = matches
+                        ));
 
-            for (Contact contactInfo :contacts) {
-                String contactsInfo;
-                if (accountContacts.containsKey(contactInfo.AccountId)) {
-                    contactsInfo = accountContacts.remove(contactInfo.AccountId);
-                }
-
-                contactsInfo += 
-                    (String.isNotBlank(contactInfo.FirstName) ? contactInfo.FirstName.mid(1,1) : '')
-                    + (String.isNotBlank(contactInfo.LastName) ? contactInfo.LastName : '')
-                    + (contactInfo.Birthdate <> null ? String.valueOf(contactInfo.Birthdate) : '')
-                    + (String.isNotBlank(contactInfo.Gender__c) ? contactInfo.Gender__c : '');
-
-                accountContacts.put(contactInfo.AccountId, contactsInfo);
-            }
-        }
-
-        List<C501_Account_Merge_Member__c> insertMergeMembers = new List<C501_Account_Merge_Member__c>();
-
-        Map<String, C501_Account_Merge__c> mergeAccounts = new Map<String, C501_Account_Merge__c>();
-        String uniqueId, minId, maxId;
-        for (AggregateResult result : allAggregatedByAccounts)  {
-            maxId = result.get('MaxId').toString();
-            minId = result.get('MinId').toString();
-
-            if (String.isBlank(maxId) || String.isBlank(minId) || maxId == minId) {
-                continue;
-            }
-
-            // Check if merge metric already created
-            if (existingAccountIds.contains(maxId) || existingAccountIds.contains(minId)) {
-                continue;
-            }
-
-            // Check if Full Contact Match meaning every contact in the households have to match
-            if (fullContactMatch) {
-                if (!accountContacts.containsKey(maxId) || !accountContacts.containsKey(minId)) {
-                    continue;
-                }
-
-                // Validate Contacts same between both accounts
-                if (accountContacts.get(maxId) <> accountContacts.get(minId)) {
-                    continue;
+                    insertMergeMembers.add(
+                        new C501_Account_Merge_Member__c(
+                            Account__c = maxId,
+                            Merge_Metric__c = mergeMetric.Id,
+                            Unique_Id__c = mergeMetric.Id + maxId,
+                            Potential_Merges__c = matches
+                        ));
                 }
             }
 
-            uniqueId = mergeMetric.Name + maxId + minId;
-            mergeAccounts.put(uniqueId, new C501_Account_Merge__c(
-                Unique_Id__c = uniqueId,
-                Merge_Confidence__c = mergeMetric.Confidence__c,
-                Account__c = minId,
-                Merge_Target_Account__c = maxId,
-                Merge_Metric__c = mergeMetric.Id
-            ));
-
-
-            Integer matches = Integer.valueOf(result.get('Matches'));
-
-            // Monitor matches greater than 2 because that means there are possibly some accounts between min/max that are not getting included in a merge candidate
-            // Investigate doing some post processing of the accounts between min/max to see if they can be included in merge candidates
-            if (matches > 2) {
-                insertMergeMembers.add(
-                    new C501_Account_Merge_Member__c(
-                        Account__c = minId,
-                        Merge_Metric__c = mergeMetric.Id,
-                        Unique_Id__c = mergeMetric.Id + minId,
-                        Potential_Merges__c = matches
-                    ));
-
-                insertMergeMembers.add(
-                    new C501_Account_Merge_Member__c(
-                        Account__c = maxId,
-                        Merge_Metric__c = mergeMetric.Id,
-                        Unique_Id__c = mergeMetric.Id + maxId,
-                        Potential_Merges__c = matches
-                    ));
-            }
-        }
-
-        if (!insertMergeMembers.isEmpty()) {
-           
-            // Insert any merge members that are not in Saleforce - saves a query to just let the DB either update or insert records
-            //
-            Database.SaveResult[] insertResults = Database.insert(insertMergeMembers, false);
-            for (Database.SaveResult result : insertResults) {
-                if (!result.isSuccess()) {
-                    for(Database.Error resultError : result.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts');
-                    }                        
+            if (!insertMergeMembers.isEmpty()) {
+            
+               // Insert any merge members that are not in Saleforce - saves a query to just let the DB either update or insert records
+                //
+                Database.SaveResult[] insertResults = Database.insert(insertMergeMembers, false);
+                for (Database.SaveResult result : insertResults) {
+                    if (!result.isSuccess()) {
+                        for(Database.Error resultError : result.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts');
+                        }                        
+                    }
                 }
             }
-        }
 
-        C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
-        c501MassMerge_SharedCode_Account.InsertObjectMergeCandidates(mergeMetric, mergeAccounts.values());
+            if (!mergeAccounts.isEmpty()) {
+                C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
+                c501MassMerge_SharedCode_Account.InsertObjectMergeCandidates(mergeMetric, mergeAccounts.values());
+            }
+        }     
     }
 
     public void ProcessReportByContacts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<Reports.ReportFilter> reportFilters, String additionalGroupByField) {
@@ -632,66 +644,82 @@ public class C501_MM_Rule_Discover {
         }
 
         String strSoqlGroupBy = ' GROUP BY ' + String.join(groupByFields, ', ');
-        String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Contact_Id__c + ') > 1 ';
         String strSoqlOrderBy = ' ORDER BY Count(' + mergeMetric.Source_Object_Contact_Id__c + ') DESC';
-
-        String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
 
         System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover:ProcessReportByContacts aggregate SOQL');
         System.debug(LoggingLevel.DEBUG, strSoqlSelect);
         System.debug(LoggingLevel.DEBUG, strSoqlFrom);
         System.debug(LoggingLevel.DEBUG, strSoqlWhere);
         System.debug(LoggingLevel.DEBUG, strSoqlGroupBy);
-        System.debug(LoggingLevel.DEBUG, strSoqlHaving);
         System.debug(LoggingLevel.DEBUG, strSoqlOrderBy);
-        System.debug(LoggingLevel.DEBUG, strSoqlLimit);
 
-        AggregateResult[] allAggregatedByContacts;
-        try {
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+        Integer maxCountInterval = 10;
+        for (Integer countIndex = 2; countIndex <= maxCountInterval; countIndex++) {
 
-    		allAggregatedByContacts = Database.Query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-        }
-        catch (System.LimitException exLimit) {
-            System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-            System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL System.LimitException Error: ' + exLimit.getMessage());
-            return;
-        }
-        catch (Exception ex) {
-            System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
-            System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL Error: ' + ex.getMessage());
-            return;
-        }
+            String countInterval = (countIndex >= maxCountInterval) ? ' >= ' + String.valueOf(countIndex) : ' = ' + String.valueOf(countIndex);
 
-        Map<String, C501_Contact_Merge__c> mergeContacts = new Map<String, C501_Contact_Merge__c>();
-        String uniqueId, minId, maxId;
-        for (AggregateResult result : allAggregatedByContacts)  {
-            maxId = result.get('MaxId').toString();
-            minId = result.get('MinId').toString();
+            if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                System.debug(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts Near Salesforce Limits so kick out on processing countInterval: ' + countInterval + ' of maxCountInterval: ' + String.valueOf(maxCountInterval));
+                break;
+            }
 
-            if (String.isBlank(maxId) || String.isBlank(minId) || maxId == minId) {
+            String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Contact_Id__c + ') ' + countInterval;
+            System.debug(LoggingLevel.DEBUG, strSoqlHaving);
+            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
+            System.debug(LoggingLevel.DEBUG, strSoqlLimit);
+
+            AggregateResult[] allAggregatedByContacts;
+            try {
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                allAggregatedByContacts = Database.Query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+            }
+            catch (System.LimitException exLimit) {
+                System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL System.LimitException Error: ' + exLimit.getMessage());
+                return;
+            }
+            catch (Exception ex) {
+                System.debug(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
+                System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL Error: ' + ex.getMessage());
+                return;
+            }
+
+            if (allAggregatedByContacts.isEmpty()) {
                 continue;
             }
 
-            uniqueId = mergeMetric.Name + maxId + minId;
-            mergeContacts.put(uniqueId, new C501_Contact_Merge__c(
-                Unique_Id__c = uniqueId,
-                Merge_Confidence__c = mergeMetric.Confidence__c,
-                Contact__c = minId,
-                Merge_Target_Contact__c = maxId,
-                Merge_Metric__c = mergeMetric.Id
-            ));
+            Map<String, C501_Contact_Merge__c> mergeContacts = new Map<String, C501_Contact_Merge__c>();
+            String uniqueId, minId, maxId;
+            for (AggregateResult result : allAggregatedByContacts)  {
+                maxId = result.get('MaxId').toString();
+                minId = result.get('MinId').toString();
 
-            // Check to schedule additional processing if Matches > 2
-            Integer matches = Integer.valueOf(result.get('Matches'));
-            if (matches > 2) {
-                // TBG - batch schedule - figure out how to get through all even if more than 100 by using a custom checked date or something to send some each time Discover call
-                //  Process - attempt to match every 2 Ids and if Odd size then at the end match the first and last together.
+                if (String.isBlank(maxId) || String.isBlank(minId) || maxId == minId) {
+                    continue;
+                }
+
+                uniqueId = mergeMetric.Name + maxId + minId;
+                mergeContacts.put(uniqueId, new C501_Contact_Merge__c(
+                    Unique_Id__c = uniqueId,
+                    Merge_Confidence__c = mergeMetric.Confidence__c,
+                    Contact__c = minId,
+                    Merge_Target_Contact__c = maxId,
+                    Merge_Metric__c = mergeMetric.Id
+                ));
+
+                // Check to schedule additional processing if Matches > 2
+                Integer matches = Integer.valueOf(result.get('Matches'));
+                if (matches > 2) {
+                    // TBG - batch schedule - figure out how to get through all even if more than 100 by using a custom checked date or something to send some each time Discover call
+                    //  Process - attempt to match every 2 Ids and if Odd size then at the end match the first and last together.
+                }
+            }
+
+            if (!mergeContacts.isEmpty()) {
+                C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
+                c501MassMerge_SharedCode_Contact.InsertObjectMergeCandidates(mergeMetric, mergeContacts.values());
             }
         }
-
-        C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-        c501MassMerge_SharedCode_Contact.InsertObjectMergeCandidates(mergeMetric, mergeContacts.values());
     }
 
     // Report Column Field Names don't always match the Object Field Name

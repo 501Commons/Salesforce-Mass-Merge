@@ -113,6 +113,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         String mergeMetricName = 'User Merge Rule Account No Contacts';
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
         strSoql += ' AND Name = \'' + mergeMetricName + '\'';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
@@ -148,8 +149,11 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         }
 
         Map<Id, String> contactAccounts = new Map<Id, String>();
-        for (Contact contact : [
-            SELECT Id, AccountId FROM Contact WHERE Id in :contactIds]) {
+
+        strSoql = 'SELECT Id, AccountId FROM Contact WHERE Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactIds);
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+        for (Contact contact : Database.query(strSoql)) {
 
             // Contact could have null account if not NPSP household model
             if (contact.AccountId <> null) {
@@ -162,8 +166,11 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         }
 
         Map<Id, Integer> accountMembers = new Map<Id, Integer>();
-        for (AggregateResult result : [
-            SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in :contactAccounts.values() group by AccountId]) {
+
+        strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values());
+        strSoql += ' group by AccountId LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+        for (AggregateResult result : Database.query(strSoql)) {
 
             String accountId = result.get('AccountId').toString();
             Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
@@ -196,6 +203,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         // Delete any account merges for accounts where contact was merged
         strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
         strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
         List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
