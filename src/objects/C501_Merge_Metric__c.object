@@ -54,7 +54,9 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>AutoMerge_Objects__c</fullName>
+        <description>Picklist values for what types of merging are allowed.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Merging types allowed</inlineHelpText>
         <label>AutoMerge Objects</label>
         <required>false</required>
         <trackTrending>false</trackTrending>
@@ -85,7 +87,9 @@
     <fields>
         <fullName>AutoMerge_Percentage__c</fullName>
         <defaultValue>100.0</defaultValue>
+        <description>Automerge Percentage to use when determining the threshold to automatically merge any merge candidates.  Automerging happens when the Automerge Percentage is less than or equal to the merge candidate confidence percentage.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Percent value when a merge candidate is automatically merged.</inlineHelpText>
         <label>AutoMerge Percentage</label>
         <precision>18</precision>
         <required>false</required>
@@ -96,8 +100,9 @@
     <fields>
         <fullName>Confidence__c</fullName>
         <defaultValue>90.0</defaultValue>
-        <description>Confidence percentage for potential merge candidates found by this rule.</description>
+        <description>Initial confidence percentage for merge candidates found by the merge rule.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Default merge candidate confidence percentage</inlineHelpText>
         <label>Confidence</label>
         <precision>18</precision>
         <required>true</required>
@@ -113,6 +118,26 @@
         <trackTrending>false</trackTrending>
         <type>LongTextArea</type>
         <visibleLines>3</visibleLines>
+    </fields>
+    <fields>
+        <fullName>Enable_Account_Merge_Discovery__c</fullName>
+        <defaultValue>true</defaultValue>
+        <description>When enabled, background processing will attempt to discover account merge candidates.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Enable to discover account merge candidates</inlineHelpText>
+        <label>Enable Account Merge Discovery</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Enable_Contact_Merge_Discovery__c</fullName>
+        <defaultValue>true</defaultValue>
+        <description>When enabled, background processing will attempt to discover contact merge candidates.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Enable to discover contact merge candidates</inlineHelpText>
+        <label>Enable Contact Merge Discovery</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
     </fields>
     <fields>
         <fullName>Last_Discover_Date__c</fullName>
@@ -132,8 +157,9 @@
     </fields>
     <fields>
         <fullName>Source_Object_Account_Id__c</fullName>
-        <description>Account Id fieldname based on the Source Object.</description>
+        <description>Account Id field based on the Source Object.   Example: Source Object is Contact then the Account Id is AccountId because AccountId is the lookup on the contact that holds the Account Id value.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Source Object Account Id Reference</inlineHelpText>
         <label>Source Object Account Id</label>
         <length>128</length>
         <required>false</required>
@@ -143,7 +169,9 @@
     </fields>
     <fields>
         <fullName>Source_Object_Contact_Id__c</fullName>
+        <description>Contact Id field based on the Source Object. Example: Source Object is Contact then the Id is Id because Id is the Salesforce Id on the contact that holds the Contact Id value.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Source Object Contact Id</inlineHelpText>
         <label>Source Object Contact Id</label>
         <length>128</length>
         <required>false</required>
@@ -153,8 +181,9 @@
     </fields>
     <fields>
         <fullName>Source_Object__c</fullName>
-        <description>Name of the source object to query when trying to find potential merge candidates (e.g., Contact, Account)</description>
+        <description>Name of the source object to query when trying to find potential merge candidates (e.g., Contact, Account) based on the associated report for this merge rule.</description>
         <externalId>false</externalId>
+        <inlineHelpText>Source object in the merge rule report</inlineHelpText>
         <label>Source Object</label>
         <length>80</length>
         <required>true</required>

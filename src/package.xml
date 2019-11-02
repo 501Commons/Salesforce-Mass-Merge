@@ -16,8 +16,8 @@
         <members>C501_MM_Rule_Discover_ContactsAccounts</members>
         <members>C501_MM_Rule_Merge</members>
         <members>C501_MassMerge_Batch</members>
-        <members>C501_MassMerge_Fx_Base</members>
         <members>C501_MassMerge_Fx_AllContactsMatch</members>
+        <members>C501_MassMerge_Fx_Base</members>
         <members>C501_MassMerge_Fx_PartialMatch</members>
         <members>C501_MassMerge_Scheduler_TEST</members>
         <members>C501_MassMerge_SharedCode</members>
@@ -94,6 +94,8 @@
         <members>C501_Merge_Metric__c.AutoMerge_Percentage__c</members>
         <members>C501_Merge_Metric__c.Confidence__c</members>
         <members>C501_Merge_Metric__c.Description__c</members>
+        <members>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</members>
+        <members>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Last_Discover_Date__c</members>
         <members>C501_Merge_Metric__c.Last_Merge_Date__c</members>
         <members>C501_Merge_Metric__c.Source_Object_Account_Id__c</members>
@@ -195,12 +197,12 @@
         <members>C501_Mass_Merge_Rules</members>
         <members>C501_Mass_Merge_Templates</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Account_Address</members>
-        <members>C501_Mass_Merge_Templates/Merge_Rule_Household_No_Contacts</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Account_Website</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Contact_Name_DOB</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Contact_Name_DOB_Gender</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Contact_Name_Email</members>
         <members>C501_Mass_Merge_Templates/Merge_Rule_Contact_Name_Email_Gender</members>
+        <members>C501_Mass_Merge_Templates/Merge_Rule_Household_No_Contacts</members>
         <members>C501_Mass_Merge_Tests</members>
         <members>C501_Mass_Merge_Tests/Test_Merge_Rule_Account_All_General</members>
         <members>C501_Mass_Merge_Tests/Test_Merge_Rule_Account_All_Group1</members>

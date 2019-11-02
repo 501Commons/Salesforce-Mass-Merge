@@ -61,11 +61,11 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>C501_MassMerge_Fx_Base</apexClass>
+        <apexClass>C501_MassMerge_Fx_AllContactsMatch</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>C501_MassMerge_Fx_AllContactsMatch</apexClass>
+        <apexClass>C501_MassMerge_Fx_Base</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -335,6 +335,16 @@
         <editable>true</editable>
         <field>C501_Merge_Metric__c.Description__c</field>
         <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</field>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>

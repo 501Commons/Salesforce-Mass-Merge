@@ -234,7 +234,8 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Total_Unassigned_Accounts__c, Total_Unassigned_Contacts__c,';
         strSoql += ' Source_Report__c, Source_Report_LastModifiedDate__c, Source_Object__c, Source_Object_Account_Id__c, Source_Object_Contact_Id__c,';
         strSoql += ' AutoMerge_Percentage__c, AutoMerge_Objects__c,';
-        strSoql += ' Last_Discover_Date__c, Last_Merge_Date__c';
+        strSoql += ' Last_Discover_Date__c, Last_Merge_Date__c,';
+        strSoql += ' Enable_Account_Merge_Discovery__c, Enable_Contact_Merge_Discovery__c';
         strSoql += ' FROM C501_Merge_Metric__c';
         strSoql += ' WHERE isDeleted = false';
         strSoql += ' AND Source_Object__c <> NULL AND Source_Report__c <> NULL AND (Source_Object_Account_Id__c <> NULL OR Source_Object_Contact_Id__c <> NULL)';

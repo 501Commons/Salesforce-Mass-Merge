@@ -272,17 +272,17 @@ public class C501_MM_Rule_Discover {
 
     public void ProcessReportDiscover(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters, String processObjectType) {
 
-        if (processObjectType.equalsIgnoreCase('Account')) {
+        if (processObjectType.equalsIgnoreCase('Account') && mergeMetric.Enable_Account_Merge_Discovery__c) {
 
             // Process by Accounts to find any potential Account merges
             this.ProcessReportByAccounts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters);
         }
-        else if (processObjectType.equalsIgnoreCase('Contacts Across Accounts')) {
+        else if (processObjectType.equalsIgnoreCase('Contacts Across Accounts') && mergeMetric.Enable_Contact_Merge_Discovery__c) {
 
             // Process by Contacts different Accounts to find any potential contact merges across different accounts
             this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, null);
         }
-        else if (processObjectType.equalsIgnoreCase('Contacts Within Account')) {
+        else if (processObjectType.equalsIgnoreCase('Contacts Within Account') && mergeMetric.Enable_Contact_Merge_Discovery__c) {
 
             // Process by Contacts same Account to find any potential contacts merges within same account
             this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, 'AccountId');
