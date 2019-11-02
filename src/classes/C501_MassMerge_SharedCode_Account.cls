@@ -500,7 +500,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 */
 
             // Only include the fields which are updateable and accessible and not hidden, unique, or externalid
-            if (fResult.isPermissionable() && fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
+            if (fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {

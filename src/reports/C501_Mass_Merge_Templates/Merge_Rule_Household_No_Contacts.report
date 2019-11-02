@@ -12,7 +12,7 @@
         </criteriaItems>
     </filter>
     <format>Tabular</format>
-    <name>Merge Rule Account No Contacts</name>
+    <name>Merge Rule Household No Contacts</name>
     <params>
         <name>co</name>
         <value>1</value>

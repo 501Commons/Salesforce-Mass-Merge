@@ -240,7 +240,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             strSoql += ' AND (Account__c = \'' + objectFilter.Id + '\' OR Merge_Target_Account__c = \'' + objectFilter.Id + '\') AND Merge_Action__c = null';
             strSoql += ' LIMIT 1';
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql: ' + strSoql);
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql1: ' + strSoql);
 
             for(C501_Account_Merge__c accountMerge : Database.query(strSoql)) {
 
@@ -298,7 +298,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             strSoql += ' ORDER BY Account__r.Name ASC';
             strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql: ' + strSoql);
+            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql2: ' + strSoql);
 
             for(C501_Account_Merge__c accountMerge : Database.Query(strSoql)) {
 
@@ -345,7 +345,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         strSoql += ' order by C501_Merge_Metric_Name__c ASC NULLS FIRST';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
         
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql: ' + strSoql);
+        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql3: ' + strSoql);
 
         listAccounts = Database.Query(strSoql);
 
@@ -372,7 +372,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             }
         }
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql: ' + strSoql);
+        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql4: ' + strSoql);
         listAccounts = Database.Query(strSoql);
     }
     

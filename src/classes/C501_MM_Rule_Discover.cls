@@ -48,6 +48,8 @@
 
 public class C501_MM_Rule_Discover {
 
+    public enum MergeCriteria { Merge_Criteria, All_Contacts_Match }
+
 	// only need one instance of this class per transaction
 	private static C501_MM_Rule_Discover instance;
 	public static C501_MM_Rule_Discover get() {
@@ -219,6 +221,7 @@ public class C501_MM_Rule_Discover {
 
         Boolean usingAddressColumns = false;
         List<String> detailColumnsChecked = new List<String>();
+        List<String> mergeCriteriaValues = new List<String>();
         for (String column :detailColumns) {
 
             if (column.containsIgnoreCase('ADDRESS')) {
@@ -226,13 +229,16 @@ public class C501_MM_Rule_Discover {
             }
 
             String checkColumn = this.CheckReportColumnName(mergeMetric, foriegnKey, column, false);
-            if (String.isNotBlank(checkColumn)) {
+            if (String.isNotBlank(checkColumn) && !checkColumn.containsIgnoreCase(MergeCriteria.Merge_Criteria.name())) {
                 detailColumnsChecked.add(checkColumn);
+            }
+            else if (String.isNotBlank(checkColumn) && checkColumn.containsIgnoreCase(MergeCriteria.Merge_Criteria.name())) {
+                mergeCriteriaValues.add(checkColumn);
             }
         }
 
         // Discover merge candidates
-        this.ProcessReportDiscover(mergeMetric, foriegnKey, detailColumnsChecked, reportFilters, processObjectType);
+        this.ProcessReportDiscover(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, processObjectType);
 
         // Check for Address columns
         //  When using address columns need to query both address, Shipping or Billing, values because regardless of
@@ -260,30 +266,30 @@ public class C501_MM_Rule_Discover {
             }
 
             // Discover merge candidates
-            this.ProcessReportDiscover(mergeMetric, foriegnKey, detailColumnsCheckedAddressReverse, reportFilters, processObjectType);
+            this.ProcessReportDiscover(mergeMetric, foriegnKey, detailColumnsCheckedAddressReverse, mergeCriteriaValues, reportFilters, processObjectType);
         }
     }
 
-    public void ProcessReportDiscover(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<Reports.ReportFilter> reportFilters, String processObjectType) {
+    public void ProcessReportDiscover(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters, String processObjectType) {
 
         if (processObjectType.equalsIgnoreCase('Account')) {
 
             // Process by Accounts to find any potential Account merges
-            this.ProcessReportByAccounts(mergeMetric, foriegnKey, detailColumnsChecked, reportFilters);
+            this.ProcessReportByAccounts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters);
         }
         else if (processObjectType.equalsIgnoreCase('Contacts Across Accounts')) {
 
             // Process by Contacts different Accounts to find any potential contact merges across different accounts
-            this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, reportFilters, null);
+            this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, null);
         }
         else if (processObjectType.equalsIgnoreCase('Contacts Within Account')) {
 
             // Process by Contacts same Account to find any potential contacts merges within same account
-            this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, reportFilters, 'AccountId');
+            this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, 'AccountId');
         }
     }
     
-    public void ProcessReportByAccounts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<Reports.ReportFilter> reportFilters) {
+    public void ProcessReportByAccounts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters) {
 
         // Find Contact matches across Accounts
         //
@@ -297,6 +303,7 @@ public class C501_MM_Rule_Discover {
 
         // Add Null checks
         for (String column :detailColumnsChecked) {
+
             // Skip Null check on fields not required to uniquely group contacts
             if (column.equalsIgnoreCase('gender__c')) {
                 continue;
@@ -305,27 +312,8 @@ public class C501_MM_Rule_Discover {
             whereFields.add(column + ' <> null ');
         }
 
-        // Check if Full Contact Match meaning every contact in the households have to match
-        Boolean fullContactMatch = false;
-
         // Add filters
         for (Reports.ReportFilter reportFilter :reportFilters) {
-
-            // Check for full contact match
-            if (reportFilter.getValue().equalsIgnoreCase('Full Contact Match')) {
-
-                // Schedule Full Contact Match Processing
-//                C501_MassMerge_Fx_Base fxBase = new C501_MassMerge_Fx_FullContactMatch();
-                fullContactMatch = true;
-                continue;
-            }
-            // Check for Partial Match - part of the field matches; Example Tom and Tomas would be considered a match
-            else if (reportFilter.getValue().equalsIgnoreCase('Partial Match')) {
-
-                // Schedule Partial Match Processing
-//                C501_MassMerge_Fx_Base fxBase = new C501_MassMerge_Fx_PartialMatch();
-                continue;
-            }
 
             String whereField = this.CheckReportOperator(mergeMetric, foriegnKey, reportFilter.getColumn(), reportFilter.getOperator(), reportFilter.getValue());
             if (String.isNotBlank(whereField)) {
@@ -418,10 +406,12 @@ public class C501_MM_Rule_Discover {
                     existingAccountIds.add(existingMerge.Merge_Target_Account__c);
             }
 
-            // Check for Full Contact Match
+            // Check for additinal Merge Criteria
             //
             Map<Id,String> accountContacts = new Map<Id,String>();
-            if (fullContactMatch) {
+            if (this.ListContainsValue(mergeCriteriaValues, MergeCriteria.All_Contacts_Match.name())) {
+                // Schedule All Contacts Match Processing
+//                C501_MassMerge_Fx_Base fxBase = new C501_MassMerge_Fx_AllContactsMatch();
 
                 Set<Id> mergeAccountIds = new Set<Id>();
                 String minId, maxId;
@@ -446,7 +436,9 @@ public class C501_MM_Rule_Discover {
                 Map<Id, Integer> existingAccountSizes = new Map<Id, Integer>();
 
                 strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIds);
-                strSoql += ' group by AccountId HAVING Count(Id) > 1 LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+                strSoql += ' group by AccountId HAVING Count(Id) > 0 LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoql);
 
                 for (AggregateResult result : Database.query(strSoql)) {
 
@@ -457,7 +449,7 @@ public class C501_MM_Rule_Discover {
 
                 Set<Id> mergeAccountIdsMatching = new Set<Id>();
                 for (AggregateResult result : allAggregatedByAccounts)  {
-                    
+
                     maxId = result.get('MaxId').toString();
                     minId = result.get('MinId').toString();
 
@@ -474,8 +466,10 @@ public class C501_MM_Rule_Discover {
                     mergeAccountIdsMatching.add(minId);
                 }
 
-                strSoql = 'SELECT AccountId, FirstName, LastName, Birthdate, Gender__c FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIdsMatching);
-                strSoql += ' ORDER BY AccountId, FirstName, LastName, Birthdate, Gender__c DESC LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+                strSoql = 'SELECT AccountId, FirstName, LastName, Birthdate FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIdsMatching);
+                strSoql += ' ORDER BY AccountId, FirstName, LastName, Birthdate DESC LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoql);
 
                 for (Contact contactInfo :Database.query(strSoql)) {
                     String contactsInfo;
@@ -486,8 +480,7 @@ public class C501_MM_Rule_Discover {
                     contactsInfo += 
                         (String.isNotBlank(contactInfo.FirstName) ? contactInfo.FirstName.mid(1,1) : '')
                         + (String.isNotBlank(contactInfo.LastName) ? contactInfo.LastName : '')
-                        + (contactInfo.Birthdate <> null ? String.valueOf(contactInfo.Birthdate) : '')
-                        + (String.isNotBlank(contactInfo.Gender__c) ? contactInfo.Gender__c : '');
+                        + (contactInfo.Birthdate <> null ? String.valueOf(contactInfo.Birthdate) : '');
 
                     accountContacts.put(contactInfo.AccountId, contactsInfo);
                 }
@@ -509,8 +502,8 @@ public class C501_MM_Rule_Discover {
                     continue;
                 }
 
-                // Check if Full Contact Match meaning every contact in the households have to match
-                if (fullContactMatch) {
+                // Check if All Contacts Match meaning every contact in the households has to match
+                if (this.ListContainsValue(mergeCriteriaValues, MergeCriteria.All_Contacts_Match.name())) {
                     if (!accountContacts.containsKey(maxId) || !accountContacts.containsKey(minId)) {
                         continue;
                     }
@@ -575,7 +568,7 @@ public class C501_MM_Rule_Discover {
         }     
     }
 
-    public void ProcessReportByContacts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<Reports.ReportFilter> reportFilters, String additionalGroupByField) {
+    public void ProcessReportByContacts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters, String additionalGroupByField) {
 
         // Only process Contact from Contact Source_Object queries (e.g., From Contact in a SOQL Query)
         if (mergeMetric.Source_Object__c <> 'Contact') {
@@ -631,7 +624,7 @@ public class C501_MM_Rule_Discover {
         List<String> groupByFields = new List<String>();
         for (String column :detailColumnsChecked) {
 
-            if (column.endswithIgnoreCase(mergeMetric.Source_Object_Contact_Id__c)) {
+            if (column.equalsIgnoreCase(mergeMetric.Source_Object_Contact_Id__c)) {
                 continue;
             }
 
@@ -1030,5 +1023,19 @@ public class C501_MM_Rule_Discover {
         }
 
         return null;
+    }
+
+    private Boolean ListContainsValue(List<String> listValues, String searchValue) {
+        if (listValues == null || listValues.isEmpty() || String.isBlank(searchValue)) {
+            return false;
+        }
+
+        for (String listValue :listValues) {
+            if (searchValue.containsIgnoreCase(listValue) || listValue.containsIgnoreCase(searchValue)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

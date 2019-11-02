@@ -109,36 +109,38 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             return;
         }
 
-        // Merge contacts into master
-        String mergeMetricName = 'User Merge Rule Account No Contacts';
-        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
-        strSoql += ' AND Name = \'' + mergeMetricName + '\'';
-        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+        List<C501_Merge_Metric__c> mergeMetrics = new List<C501_Merge_Metric__c>();
+        if (C501_MassMerge_SharedCode.IsNPSPInstalled) {
 
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
-        List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
+            String mergeMetricName = 'User Merge Rule Household No Contacts';
+            String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+            strSoql += ' AND Name = \'' + mergeMetricName + '\'';
+            strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        if (mergeMetrics.isEmpty()) {
+            System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+            mergeMetrics = Database.Query(strSoql);
 
-            mergeMetrics.add( new C501_Merge_Metric__c (
-                Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
-                Confidence__c = 90.0,
-                AutoMerge_Percentage__c = 90.0,
-                AutoMerge_Objects__c = 'Account',
-                Source_Report__c = 'User_Merge_Rule_Account_No_Contacts',
-                Source_Object__c = 'Account',
-                Source_Object_Account_Id__c = 'Id',
-                Source_Object_Contact_Id__c = 'Id',
-                Description__c = mergeMetricName,
-                Unique_Id__c = 'User_Merge_Rule_Account_No_Contacts'
-            ));
+            if (mergeMetrics.isEmpty()) {
+                mergeMetrics.add( new C501_Merge_Metric__c (
+                    Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
+                    Confidence__c = 90.0,
+                    AutoMerge_Percentage__c = 100.0,
+                    AutoMerge_Objects__c = 'Account',
+                    Source_Report__c = 'Merge_Rule_Household_No_Contacts',
+                    Source_Object__c = 'Account',
+                    Source_Object_Account_Id__c = 'Id',
+                    Source_Object_Contact_Id__c = 'Id',
+                    Description__c = mergeMetricName,
+                    Unique_Id__c = 'User_Merge_Rule_Household_No_Contacts'
+                ));
 
-            Database.SaveResult[] insertResults = Database.insert(mergeMetrics, false);
-            for (Database.SaveResult result : insertResults) {
-                if (!result.isSuccess()) {
-                    for(Database.Error resultError : result.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
-                    }                        
+                Database.SaveResult[] insertResults = Database.insert(mergeMetrics, false);
+                for (Database.SaveResult result : insertResults) {
+                    if (!result.isSuccess()) {
+                        for(Database.Error resultError : result.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
+                        }                        
+                    }
                 }
             }
         }
@@ -150,7 +152,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
 
         Map<Id, String> contactAccounts = new Map<Id, String>();
 
-        strSoql = 'SELECT Id, AccountId FROM Contact WHERE Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactIds);
+        String strSoql = 'SELECT Id, AccountId FROM Contact WHERE Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactIds);
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         for (Contact contact : Database.query(strSoql)) {
@@ -165,42 +167,8 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             return;
         }
 
-        Map<Id, Integer> accountMembers = new Map<Id, Integer>();
-
-        strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values());
-        strSoql += ' group by AccountId LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
-
-        for (AggregateResult result : Database.query(strSoql)) {
-
-            String accountId = result.get('AccountId').toString();
-            Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
-            accountMembers.put(accountId, numberOfMembers);
-        }
-
-        // Check to add an account merge request - can not Account merge here because might be in a batch call which is not supported for Account merging
-        String masterAccountId = contactAccounts.get(masterContact.Id);
-        Map<String, C501_Account_Merge__c> accountMergeInserts = new Map<String, C501_Account_Merge__c>();
-        for (String accountId :contactAccounts.values()) {
-
-            if (accountId <> masterAccountId && accountMembers.get(accountId) <= 1) {
-
-                System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact queue empty accountId: ' + accountId + ' for merge into masterAccountId: ' + masterAccountId);
-
-                // Create an account merge because the duplicate account now has no children
-                String maxId = (masterAccountId > accountId) ? masterAccountId : accountId;
-                String minId = (masterAccountId <= accountId) ? masterAccountId : accountId;
-                String uniqueId = mergeMetricName + maxId + minId;
-                accountMergeInserts.put(uniqueId, new C501_Account_Merge__c(
-                    Unique_Id__c = uniqueId,
-                    Merge_Confidence__c = mergeMetrics[0].Confidence__c,
-                    Account__c = masterAccountId,
-                    Merge_Target_Account__c = accountId,
-                    Merge_Metric__c = mergeMetrics[0].Id
-                ));
-            }
-        }
-
         // Delete any account merges for accounts where contact was merged
+        //
         strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
         strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
@@ -213,14 +181,52 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             delete deleteAccountMerges;
         }
 
-        // Queue empty household merge
-        if (!accountMergeInserts.isEmpty() && !accountMergeInserts.values().isEmpty()) {
-            Database.SaveResult[] insertResults = Database.insert(accountMergeInserts.values(), false);
-            for (Database.SaveResult result : insertResults) {
-                if (!result.isSuccess()) {
-                    for(Database.Error resultError : result.getErrors()) {
-                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
-                    }                        
+        // Check to mark household for merge if empty
+        //
+        Map<Id, Integer> accountMembers = new Map<Id, Integer>();
+
+        strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values());
+        strSoql += ' group by AccountId LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+        for (AggregateResult result : Database.query(strSoql)) {
+
+            String accountId = result.get('AccountId').toString();
+            Integer numberOfMembers = Integer.valueOf(result.get('NumberOfMembers'));
+            accountMembers.put(accountId, numberOfMembers);
+        }
+
+        if (C501_MassMerge_SharedCode.IsNPSPInstalled && !mergeMetrics.isEmpty()) {
+
+            // Check to add an account merge request - can not Account merge here because might be in a batch call which is not supported for Account merging
+            String masterNPSPHoouseholdId = contactAccounts.get(masterContact.Id);
+            Map<String, C501_Account_Merge__c> npspHouseholdMergeInserts = new Map<String, C501_Account_Merge__c>();
+            for (String npspHouseholdId :contactAccounts.values()) {
+
+                if (npspHouseholdId <> masterNPSPHoouseholdId && accountMembers.get(npspHouseholdId) <= 1) {
+
+                    // Create a NPSP Household merge because the duplicate NPSP Household now has no children
+                    String maxId = (masterNPSPHoouseholdId > npspHouseholdId) ? masterNPSPHoouseholdId : npspHouseholdId;
+                    String minId = (masterNPSPHoouseholdId <= npspHouseholdId) ? masterNPSPHoouseholdId : npspHouseholdId;
+                    String uniqueId = mergeMetrics[0].Name + maxId + minId;
+                    npspHouseholdMergeInserts.put(uniqueId, new C501_Account_Merge__c(
+                        Unique_Id__c = uniqueId,
+                        Merge_Confidence__c = mergeMetrics[0].Confidence__c,
+                        Account__c = masterNPSPHoouseholdId,
+                        Merge_Target_Account__c = npspHouseholdId,
+                        Merge_Metric__c = mergeMetrics[0].Id
+                    ));
+                }
+            }
+
+            // Queue empty NPSP household merge
+            if (!npspHouseholdMergeInserts.isEmpty() && !npspHouseholdMergeInserts.values().isEmpty()) {
+                Database.SaveResult[] insertResults = Database.insert(npspHouseholdMergeInserts.values(), false);
+                for (Database.SaveResult result : insertResults) {
+                    if (!result.isSuccess()) {
+                        for(Database.Error resultError : result.getErrors()) {
+                            C501_MassMerge_SharedCode.LogDatabaseError(resultError, 'C501_MassMerge_SharedCode::ObjectsMerge_Contact');
+                        }                        
+                    }
                 }
             }
         }

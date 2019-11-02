@@ -9,18 +9,16 @@
     <columns>
         <field>ACCOUNT.PHONE1</field>
     </columns>
+    <columns>
+        <aggregateTypes>Sum</aggregateTypes>
+        <field>Account.C501_Merge_Criteria_All_Contacts_Match__c</field>
+    </columns>
     <filter>
         <criteriaItems>
             <column>ACCOUNT.NAME</column>
             <isUnlocked>true</isUnlocked>
             <operator>startsWith</operator>
             <value>TESTDATA</value>
-        </criteriaItems>
-        <criteriaItems>
-            <column>ACCOUNT.NAME</column>
-            <isUnlocked>true</isUnlocked>
-            <operator>equals</operator>
-            <value>Full Contact Match</value>
         </criteriaItems>
     </filter>
     <format>Tabular</format>
