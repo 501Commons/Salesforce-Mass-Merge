@@ -338,6 +338,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</field>
         <readable>true</readable>
     </fieldPermissions>

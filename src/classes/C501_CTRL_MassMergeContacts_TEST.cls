@@ -329,8 +329,13 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
         System.Assert(objectMergesBefore.size() > 0);
 
-        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+        String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'Object');
+        if (String.isBlank(autoMergeObjects)) {
+            return;
+        }
 
+        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+            mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
             mergeMetric.AutoMerge_Percentage__c = 0.0;
         }
 
@@ -350,7 +355,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
     }
 
     @isTest(SeeAllData='true')
-    public static void ProcessObjectMerges_MergeEqualAutoMergePercentageTest() {
+    public static void ProcessObjectMerges_MergeEqualAutoMergePercentageNoAutoMergeObjectsTest() {
 
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
@@ -361,7 +366,43 @@ public class C501_CTRL_MassMergeContacts_TEST {
         System.Assert(objectMergesBefore.size() > 0);
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
+        }
 
+        update mergeMetrics;
+
+        Test.StartTest();
+
+        C501_MM_Rule_Merge mergeRule = new C501_MM_Rule_Merge();
+        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+            mergeRule.executeMetricById(mergeMetric.Id);
+        }
+
+        Test.StopTest();
+
+        List<C501_Contact_Merge__c> objectMergesAfter = Database.query(strSoql);
+        System.AssertEquals(objectMergesBefore.size(), objectMergesAfter.size());
+    }
+
+    @isTest(SeeAllData='true')
+    public static void ProcessObjectMerges_MergeEqualAutoMergePercentageTest() {
+
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
+
+        List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
+        System.Assert(objectMergesBefore.size() > 0);
+
+        String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'Object');
+        if (String.isBlank(autoMergeObjects)) {
+            return;
+        }
+
+        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+
+            mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
             mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
@@ -383,7 +424,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
     @isTest(SeeAllData='true')
     public static void ProcessObjectMerges_AutoMergeObjectsByObject() {
 
-        String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'Object');
+       String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'Object');
         if (String.isBlank(autoMergeObjects)) {
             return;
         }
@@ -487,4 +528,35 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Contact_Merge__c> objectMergesAfter = Database.query(strSoql);
         System.AssertNotEquals(objectMergesBefore.size(), objectMergesAfter.size());
     }
+
+    @isTest(SeeAllData='true')
+    public static void ProcessObjectMerges_DeleteMergeMetricMergesTest() {
+
+        Set<Id> mergeMetricIds = new Set<Id>();
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
+
+        List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
+        System.Assert(objectMergesBefore.size() > 0);
+
+        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+
+            mergeMetricIds.add(mergeMetric.Id);
+            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
+        }
+
+        update mergeMetrics;
+
+        Test.StartTest();
+
+        C501_MassMerge_SharedCode.DeleteMergeMetricChildren(mergeMetricIds);
+
+        Test.StopTest();
+
+        List<C501_Contact_Merge__c> objectMergesAfter = Database.query(strSoql);
+        System.AssertNotEquals(objectMergesBefore.size(), objectMergesAfter.size());
+    }
+
 }

@@ -120,6 +120,16 @@
         <visibleLines>3</visibleLines>
     </fields>
     <fields>
+        <fullName>Discover_AutoMerge_Objects_Only__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>Only discover potential merges based on the automerge objects selected.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Only discover potential merges based on the automerge objects selected.</inlineHelpText>
+        <label>Discover AutoMerge Objects Only</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
         <fullName>Enable_Account_Merge_Discovery__c</fullName>
         <defaultValue>true</defaultValue>
         <description>When enabled, background processing will attempt to discover account merge candidates.</description>

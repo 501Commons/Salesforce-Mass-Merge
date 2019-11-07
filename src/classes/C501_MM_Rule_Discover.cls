@@ -127,30 +127,7 @@ public class C501_MM_Rule_Discover {
         }
 
         if (!mergeMetricDeleteChildren.isEmpty()) {
-
-            String strSoqlDeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-
-            strSoqlDeleteAccountMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
-
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlDeleteAccountMerges);
-
-            List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqlDeleteAccountMerges);
-            if (!deleteAccountMerges.isEmpty()) {
-                Database.delete(deleteAccountMerges, false);
-            }
-
-            String strSoqlDeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-
-            strSoqlDeleteContactMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricDeleteChildren);
-
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqlDeleteContactMerges);
-
-            List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqlDeleteContactMerges);
-            if (!deleteContactMerges.isEmpty()) {
-
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete contactMerges: ' + deleteContactMerges);
-                Database.delete(deleteContactMerges, false);
-            }
+            C501_MassMerge_SharedCode.DeleteMergeMetricChildren(mergeMetricDeleteChildren);
         }
 
         if (!mergeMetricsUpdate.isEmpty()) {
@@ -272,17 +249,31 @@ public class C501_MM_Rule_Discover {
 
     public void ProcessReportDiscover(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters, String processObjectType) {
 
+        List<String> automergeObjects = C501_MassMerge_SharedCode.MultiSelectPickListToList(mergeMetric.AutoMerge_Objects__c);
+
         if (processObjectType.equalsIgnoreCase('Account') && mergeMetric.Enable_Account_Merge_Discovery__c) {
+
+            if (mergeMetric.Discover_AutoMerge_Objects_Only__c && !automergeObjects.contains('Account')) {
+                return;
+            }
 
             // Process by Accounts to find any potential Account merges
             this.ProcessReportByAccounts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters);
         }
         else if (processObjectType.equalsIgnoreCase('Contacts Across Accounts') && mergeMetric.Enable_Contact_Merge_Discovery__c) {
 
+            if (mergeMetric.Discover_AutoMerge_Objects_Only__c && !automergeObjects.contains('Contacts Across Accounts')) {
+                return;
+            }
+
             // Process by Contacts different Accounts to find any potential contact merges across different accounts
             this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, null);
         }
         else if (processObjectType.equalsIgnoreCase('Contacts Within Account') && mergeMetric.Enable_Contact_Merge_Discovery__c) {
+
+            if (mergeMetric.Discover_AutoMerge_Objects_Only__c && !automergeObjects.contains('Contacts Within Account')) {
+                return;
+            }
 
             // Process by Contacts same Account to find any potential contacts merges within same account
             this.ProcessReportByContacts(mergeMetric, foriegnKey, detailColumnsChecked, mergeCriteriaValues, reportFilters, 'AccountId');
@@ -486,7 +477,7 @@ public class C501_MM_Rule_Discover {
                 }
             }
 
-            List<C501_Account_Merge_Member__c> insertMergeMembers = new List<C501_Account_Merge_Member__c>();
+            //List<C501_Account_Merge_Member__c> insertMergeMembers = new List<C501_Account_Merge_Member__c>();
             Map<String, C501_Account_Merge__c> mergeAccounts = new Map<String, C501_Account_Merge__c>();
             String uniqueId, minId, maxId;
             for (AggregateResult result : allAggregatedByAccounts)  {
@@ -523,7 +514,8 @@ public class C501_MM_Rule_Discover {
                     Merge_Metric__c = mergeMetric.Id
                 ));
 
-
+                // TBD - Uncomment or refactor once there is a post processing solution to handle > 2 merge matches
+/*
                 Integer matches = Integer.valueOf(result.get('Matches'));
 
                 // Monitor matches greater than 2 because that means there are possibly some accounts between min/max that are not getting included in a merge candidate
@@ -545,8 +537,10 @@ public class C501_MM_Rule_Discover {
                             Potential_Merges__c = matches
                         ));
                 }
+*/
             }
 
+/*
             if (!insertMergeMembers.isEmpty()) {
             
                // Insert any merge members that are not in Saleforce - saves a query to just let the DB either update or insert records
@@ -560,6 +554,7 @@ public class C501_MM_Rule_Discover {
                     }
                 }
             }
+*/
 
             if (!mergeAccounts.isEmpty()) {
                 C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();

@@ -83,6 +83,25 @@ public without sharing class C501_MassMerge_SharedCode {
         set;
     }
 
+    public static List<String> MultiSelectPickListToList(String multiSelectPickList) {
+
+        List<String> multiSelectList = new List<String>();
+        
+        if (String.isBlank(multiSelectPickList)) {
+            return multiSelectList;
+        }
+
+        if (multiSelectList.contains(';')) {
+            multiSelectList = multiSelectPickList.split(';');
+        }
+        else {
+            multiSelectList.add(multiSelectPickList);
+        }
+
+        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::MultiSelectPickListToList multiSelectList: ' + multiSelectList);
+        return multiSelectList;
+    }
+
     public static Boolean LogDatabaseError(Database.Error resultError, String callingMethod) {
 
         String statusCode = String.valueOf(resultError.getStatusCode());
@@ -235,7 +254,7 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Source_Report__c, Source_Report_LastModifiedDate__c, Source_Object__c, Source_Object_Account_Id__c, Source_Object_Contact_Id__c,';
         strSoql += ' AutoMerge_Percentage__c, AutoMerge_Objects__c,';
         strSoql += ' Last_Discover_Date__c, Last_Merge_Date__c,';
-        strSoql += ' Enable_Account_Merge_Discovery__c, Enable_Contact_Merge_Discovery__c';
+        strSoql += ' Enable_Account_Merge_Discovery__c, Enable_Contact_Merge_Discovery__c, Discover_AutoMerge_Objects_Only__c';
         strSoql += ' FROM C501_Merge_Metric__c';
         strSoql += ' WHERE isDeleted = false';
         strSoql += ' AND Source_Object__c <> NULL AND Source_Report__c <> NULL AND (Source_Object_Account_Id__c <> NULL OR Source_Object_Contact_Id__c <> NULL)';
@@ -349,6 +368,29 @@ public without sharing class C501_MassMerge_SharedCode {
         }
     }
 
+    public static void DeleteMergeMetricChildren(Set<Id> mergeMetricIds) {
+
+        String strSoqlDeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+        strSoqlDeleteAccountMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricIds);
+
+        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::DeleteMergeMetricChildren strSoqlDeleteAccountMerges: ' + strSoqlDeleteAccountMerges);
+
+        List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqlDeleteAccountMerges);
+        if (!deleteAccountMerges.isEmpty()) {
+            Database.delete(deleteAccountMerges, false);
+        }
+
+        String strSoqlDeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        strSoqlDeleteContactMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricIds);
+
+        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::DeleteMergeMetricChildren strSoqlDeleteContactMerges: ' + strSoqlDeleteContactMerges);
+
+        List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqlDeleteContactMerges);
+        if (!deleteContactMerges.isEmpty()) {
+            Database.delete(deleteContactMerges, false);
+        }
+    }
+   
     /*
         @Param:List of selectOption to be sort.
         @Return: Sorted list of selectOptions by Label
@@ -393,26 +435,12 @@ public without sharing class C501_MassMerge_SharedCode {
 
     public static Integer ProcessObjectMergeCandidates_Account(C501_Merge_Metric__c mergeMetric, List<C501_Account_Merge__c> pendingAutoMerges, Map<Id, Id> contactHouseholdMap) {
 
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ProcessObjectMergeCandidates_Account pendingAutoMerges: ' + pendingAutoMerges);
-
-        if (String.isBlank(mergeMetric.AutoMerge_Objects__c)) {
-            return 0;
-        }
-
-        List<String> automergeObjects = new List<String> { mergeMetric.AutoMerge_Objects__c };
-        if (mergeMetric.AutoMerge_Objects__c.contains(';')) {
-            automergeObjects = mergeMetric.AutoMerge_Objects__c.split(';');
-        }
-
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ProcessObjectMergeCandidates_Account automergeObjects: ' + automergeObjects);
-
+        List<String> automergeObjects = C501_MassMerge_SharedCode.MultiSelectPickListToList(mergeMetric.AutoMerge_Objects__c);
         if (automergeObjects.contains('Account')) {
 
             if (!pendingAutoMerges.isEmpty()) {
                 C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
-                c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingAutoMerges, false);
-
-                return pendingAutoMerges.size();
+                return c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingAutoMerges, false);
             }
         }
 
@@ -421,15 +449,7 @@ public without sharing class C501_MassMerge_SharedCode {
 
     public static Integer ProcessObjectMergeCandidates_Contact(C501_Merge_Metric__c mergeMetric, List<C501_Contact_Merge__c> pendingAutoMerges, Map<Id, Id> contactHouseholdMap) {
 
-        if (String.isBlank(mergeMetric.AutoMerge_Objects__c)) {
-            return 0;
-        }
-
-        List<String> automergeObjects = new List<String> { mergeMetric.AutoMerge_Objects__c };
-        if (mergeMetric.AutoMerge_Objects__c.contains(';')) {
-            automergeObjects = mergeMetric.AutoMerge_Objects__c.split(';');
-        }
-
+        List<String> automergeObjects = C501_MassMerge_SharedCode.MultiSelectPickListToList(mergeMetric.AutoMerge_Objects__c);
         if (automergeObjects.contains('Contacts Within Account') || automergeObjects.contains('Contacts Across Accounts')) {
 
             List<C501_Contact_Merge__c> pendingAutoMergeCandidates = new List<C501_Contact_Merge__c>();
@@ -455,9 +475,7 @@ public without sharing class C501_MassMerge_SharedCode {
 
             if (!pendingAutoMergeCandidates.isEmpty()) {
                 C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-                c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingAutoMergeCandidates, true);
-
-                return pendingAutoMergeCandidates.size();
+                return c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingAutoMergeCandidates, true);
             }
         }
 

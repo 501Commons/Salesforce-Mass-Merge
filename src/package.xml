@@ -41,6 +41,10 @@
         <name>ApexPage</name>
     </types>
     <types>
+        <members>C501_Merge_MetricTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
         <members>C501_Mass_Merge</members>
         <members>C501_Mass_Merge_Classic</members>
         <name>CustomApplication</name>
@@ -94,6 +98,7 @@
         <members>C501_Merge_Metric__c.AutoMerge_Percentage__c</members>
         <members>C501_Merge_Metric__c.Confidence__c</members>
         <members>C501_Merge_Metric__c.Description__c</members>
+        <members>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</members>
         <members>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Last_Discover_Date__c</members>

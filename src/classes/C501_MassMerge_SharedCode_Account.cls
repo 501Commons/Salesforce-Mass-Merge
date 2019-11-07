@@ -299,8 +299,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         // Check for batch queued merges
         if (!pendingMerges.isEmpty()) {
 
-            ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingMerges, false);
-            return pendingMerges.size();
+            return this.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingMerges, false);
         }
 
         // Check if AutoMerge Enabled
@@ -312,12 +311,12 @@ public without sharing class C501_MassMerge_SharedCode_Account {
     }
 
     // Legacy Method for Managed Package
-    public void ProcessObjectMerges(List<C501_Account_Merge__c> objectMerges, Boolean batchMerge)
+    public Integer ProcessObjectMerges(List<C501_Account_Merge__c> objectMerges, Boolean batchMerge)
     {
-        this.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), objectMerges, batchMerge);
+        return this.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), objectMerges, batchMerge);
     }
 
-    public void ProcessObjectMerges(List<C501_Merge_Metric__c> mergeMetrics, List<C501_Account_Merge__c> objectMerges, Boolean batchMerge)
+    public Integer ProcessObjectMerges(List<C501_Merge_Metric__c> mergeMetrics, List<C501_Account_Merge__c> objectMerges, Boolean batchMerge)
     {
 
         // Jobs with Status = 'Holding' applies to batch jobs in the Apex flex queue (max allowed 100)
@@ -332,6 +331,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             mergeMetricMap.put(mergeMetric.Id, mergeMetric.AutoMerge_Percentage__c);
         }
 
+        Integer numberObjectMerges = 0;
         Set<Id> objectsProcessed = new Set<Id>();
         List<C501_Account_Merge__c> deleteAccountMerges = new List<C501_Account_Merge__c>();
         for (C501_Account_Merge__c mergeCandidate : objectMerges) {
@@ -403,6 +403,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 batchMergeRequest.query = 'SELECT Id, Account__c, Merge_Target_Account__c FROM C501_Account_Merge__c WHERE Id = \'' + mergeCandidate.Id + '\'';
                 batchMergeRequest.AccountMerge = true;
                 Database.executeBatch(batchMergeRequest);
+
+                numberObjectMerges++; 
             }
             else {
 
@@ -418,6 +420,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 } );
 
                 // Limit 1 non-batch merge at a time to avoid any governor limit issues
+                numberObjectMerges++;
+
                 break;
             }
         }
@@ -426,6 +430,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Account Merges: ' + deleteAccountMerges);
             delete deleteAccountMerges;
         }
+
+        return numberObjectMerges;
     }
 
     private void BackfillBlankFields(SObject updateRecord, Set<String> blankFields, List<String> availableFieldValues) {
