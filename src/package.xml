@@ -84,6 +84,7 @@
         <members>C501_Contact_Merge__c.Unique_Id__c</members>
         <members>C501_Debug_Log__c.Debug_Text_Long__c</members>
         <members>C501_Debug_Log__c.Debug_Text__c</members>
+        <members>C501_Debug_Log__c.Log_Level__c</members>
         <members>C501_Merge_Account_History__c.Account__c</members>
         <members>C501_Merge_Account_History__c.Field__c</members>
         <members>C501_Merge_Account_History__c.Ignore_Value__c</members>

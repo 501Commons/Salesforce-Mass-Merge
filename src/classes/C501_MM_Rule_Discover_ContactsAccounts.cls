@@ -63,18 +63,29 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
     public static void executeFuture() {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
         C501_MM_Rule_Discover_ContactsAccounts.get().ProcessMergeMetrics(strSoql);
     }
 
     public void execute(SchedulableContext SC) {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
         this.ProcessMergeMetrics(strSoql);
     }
 
     public void executeMetricById(Id mergeMetricId) {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
 
         // Add in specific Id query
         strSoql += ' AND Id = \'' + mergeMetricId + '\'';
@@ -99,7 +110,7 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
         strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
 
@@ -148,9 +159,9 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
                 }                        
             }
 
-            discover.ProcessReport(reportId, mergeMetric, 'Contacts Across Accounts');
+            discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Contacts_Across_Accounts.name().replace('_', ' '));
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
-                System.debug(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
                 break;
             }
         }

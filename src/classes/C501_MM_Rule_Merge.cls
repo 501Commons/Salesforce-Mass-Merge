@@ -60,6 +60,9 @@ public class C501_MM_Rule_Merge implements Schedulable {
     public void executeMetricById(Id mergeMetricId) {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
 
         // Add in specific Id query
         strSoql += ' AND Id = \'' + mergeMetricId + '\'';
@@ -80,7 +83,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
         strSoql += ' ORDER BY Last_Merge_Date__c ASC';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
 
@@ -103,6 +106,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
                 break;
             }
 
@@ -118,7 +122,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
                     if (report.LastModifiedDate <> null && (mergeMetric.Source_Report_LastModifiedDate__c == null || mergeMetric.Source_Report_LastModifiedDate__c <> report.LastModifiedDate)) {
 
                         reportChangeDetected = true;
-                        System.debug(LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
+                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
 
                         mergeMetric.Source_Report_LastModifiedDate__c = report.LastModifiedDate;
                         mergeMetric.Unique_Id__c = report.Id;
@@ -132,32 +136,38 @@ public class C501_MM_Rule_Merge implements Schedulable {
             if (reportChangeDetected || !reportFound) {
 
                 if (!reportFound) {
-                    System.debug(LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
                 }
 
                 // Queue merge metric to delete children since report changed or report not found
                 //
 
                 String strSoqldeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+                if (String.isBlank(strSoqldeleteAccountMerges)) {
+                    return;
+                }
                 strSoqldeleteAccountMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
                 List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqldeleteAccountMerges);
 
                 if (!deleteAccountMerges.isEmpty()) {
-                    System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
-                    delete deleteAccountMerges;
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
+                    Database.delete(deleteAccountMerges, false);
                 }
 
                 String strSoqldeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+                if (String.isBlank(strSoqldeleteContactMerges)) {
+                    return;
+                }
                 strSoqldeleteContactMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
                 List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqldeleteContactMerges);
 
                 if (!deleteContactMerges.isEmpty()) {
-                    System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
-                    delete deleteContactMerges;
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
+                    Database.delete(deleteContactMerges, false);
                 }
 
                 continue;
@@ -188,5 +198,8 @@ public class C501_MM_Rule_Merge implements Schedulable {
                 }
             }
         }
+
+        // Flush all Debug Logs to the Database
+        C501_MassMerge_SharedCode.OutputDebugLogFlush();
     }
 }

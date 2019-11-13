@@ -64,6 +64,9 @@ class C501_MassMerge_Scheduler_TEST {
         Test.stopTest();
 
         String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
         strSoql += ' LIMIT 1';
 

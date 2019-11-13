@@ -39,7 +39,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
     // constructor
     public C501_CTRL_MassMergeContacts() {
 
-        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::C501_CTRL_MassMergeContacts Constructor');
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::C501_CTRL_MassMergeContacts Constructor');
 
         redirect = false;
         c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
@@ -204,7 +204,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
 
     public virtual void ResetContacts() {
 
-        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::ResetContacts');
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::ResetContacts');
 
         listSOContacts = null;
         objectFilter.Id = null;
@@ -235,10 +235,13 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         if (objectFilter.Id <> null) {
         
             String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+            if (String.isBlank(strSoql)) {
+                return;
+            }
             strSoql += ' AND (Contact__c = \'' + objectFilter.Id + '\' OR Merge_Target_Contact__c = \'' + objectFilter.Id + '\') AND Merge_Action__c = null';
             strSoql += ' LIMIT 1';
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts ObjectFilter Query strSoql: ' + strSoql);
 
             for(C501_Contact_Merge__c contactMerge :Database.query(strSoql)) {
 
@@ -289,12 +292,15 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             }
 
             String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+            if (String.isBlank(strSoql)) {
+                return;
+            }
             strSoql += ' AND (Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ') AND Merge_Action__c = null';
             strSoql += strRuleSoql;
             strSoql += ' ORDER BY Contact__r.Name ASC';
             strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-            System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts No ObjectFilter Query strSoql: ' + strSoql);
 
             for(C501_Contact_Merge__c contactMerge : Database.Query(strSoql)) {
 
@@ -333,15 +339,14 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             }
         }
 
-        String strSoql = 'SELECT ' + String.join(listStrFields, ',');
-
         Set<Id> contactsMergeIds = contactsMerge.keySet();
-        
+
+        String strSoql = 'SELECT ' + String.join(listStrFields, ',');
         strSoql += ' FROM Contact WHERE Id in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactsMergeIds);
         strSoql += ' order by C501_Merge_Metric_Name__c ASC NULLS FIRST';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
         
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts Contact Query strSoql: ' + strSoql);
 
         listContacts = Database.Query(strSoql);
 
@@ -368,7 +373,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             }
         }
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
         listContacts = Database.Query(strSoql);
     }
     
@@ -426,13 +431,13 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             Map<String, C501_Contact_Merge__c> listContactsMergesIgnore = new Map<String, C501_Contact_Merge__c>();
             Map<String, C501_Contact_Merge__c> listContactsMergesMaster = new Map<String, C501_Contact_Merge__c>();
 
-            System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts listContacts: ' + String.valueOf(listContacts));
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts listContacts: ' + String.valueOf(listContacts));
 
             for (Contact contact : listContacts) {
 
                 if (contact.Id != null && contact.C501_Merge_Action__c == 'Master') {
 
-                    System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Master Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Master Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
 
                     // we couldn't reliably mark dirty records in all scenarios,
                     // so we've decided it is better to always update all records.
@@ -445,7 +450,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             continue;
                         }
 
-                        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master contact.Id: ' + contact.Id);
+                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master contact.Id: ' + contact.Id);
 
                         listContactsMergesMaster.put(contact.C501_Merge_Id__c, new C501_Contact_Merge__c(
                             Id = contact.C501_Merge_Id__c,
@@ -457,14 +462,14 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             Merge_Confidence__c = 100.0
                         ));
 
-                        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master listContactsMergesMaster: ' + listContactsMergesMaster);
+                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master listContactsMergesMaster: ' + listContactsMergesMaster);
 
                     }
                 }
 
                 else if (contact.Id != null && contact.C501_Merge_Action__c == 'Ignore') {
 
-                    System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Ignore Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Ignore Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
 
                     // we couldn't reliably mark dirty records in all scenarios,
                     // so we've decided it is better to always update all records.

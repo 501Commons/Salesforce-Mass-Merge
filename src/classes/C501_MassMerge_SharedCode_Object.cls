@@ -114,10 +114,13 @@ public without sharing class C501_MassMerge_SharedCode_Object {
 
             String mergeMetricName = 'User Merge Rule Household No Contacts';
             String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+            if (String.isBlank(strSoql)) {
+                return;
+            }
             strSoql += ' AND Name = \'' + mergeMetricName + '\'';
             strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-            System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
             mergeMetrics = Database.Query(strSoql);
 
             if (mergeMetrics.isEmpty()) {
@@ -125,7 +128,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
                     Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
                     Confidence__c = 90.0,
                     AutoMerge_Percentage__c = 100.0,
-                    AutoMerge_Objects__c = 'Account',
+                    AutoMerge_Objects__c = C501_MassMerge_SharedCode.MergeObjectScenarios.Account.name(),
                     Source_Report__c = 'Merge_Rule_Household_No_Contacts',
                     Source_Object__c = 'Account',
                     Source_Object_Account_Id__c = 'Id',
@@ -170,15 +173,18 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         // Delete any account merges for accounts where contact was merged
         //
         strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
         List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
 
         if (!deleteAccountMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
-            delete deleteAccountMerges;
+           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
+            Database.delete(deleteAccountMerges, false);
         }
 
         // Check to mark household for merge if empty

@@ -149,7 +149,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         Id masterObjectId = [SELECT Id FROM Contact WHERE Name LIKE '%TESTDATA%' ORDER BY Id ASC LIMIT 1].Id;
 
-        System.debug(LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
         Test.StartTest();
 
         //point to our VF page
@@ -209,7 +209,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         ctrl.SaveContacts();
 
-        System.debug(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts_TEST::CodeCoverageTests' + ctrl.strSaveResults);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts_TEST::CodeCoverageTests' + ctrl.strSaveResults);
         //System.Assert(ctrl.strSaveResults.startsWith('Error'));
         ctrl.ChangeRule();
         ctrl.SaveContacts();      
@@ -261,6 +261,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -293,6 +296,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -324,6 +330,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -360,6 +369,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -367,6 +379,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
             mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
+            mergeMetric.AutoMerge_Objects__c = '';
         }
 
         update mergeMetrics;
@@ -390,6 +403,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -432,6 +448,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -468,6 +487,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -496,7 +518,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
     @isTest(SeeAllData='true')
     public static void ProcessObjectMerges_AutoMergeObjectsByObjectsAcrossObjects() {
 
-        String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'ObjectsAccrossObjects');
+        String autoMergeObjects = C501_MassMerge_SharedCode.TestHelperAutoMergeObjects('Contact', 'ObjectsAcrossObjects');
         if (String.isBlank(autoMergeObjects)) {
             return;
         }
@@ -504,6 +526,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
@@ -536,6 +561,9 @@ public class C501_CTRL_MassMergeContacts_TEST {
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
 
         List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);

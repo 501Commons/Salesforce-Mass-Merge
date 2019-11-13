@@ -53,7 +53,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         List<Id> listContactIds = new List<Id>();
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-        System.debug(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Contact::WhereFilterByMerges strSoql: ' + strSoql);
+        if (String.isBlank(strSoql)) {
+            return '';
+        }
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Contact::WhereFilterByMerges strSoql: ' + strSoql);
         Integer hourMode = math.mod(current24Hour, 3);
         for (C501_Contact_Merge__c mergeRecord :Database.query(strSoql)) {
 
@@ -112,7 +115,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
     // the list of Contacts
     public List<SelectOption> ListObjectsWithConfidence(String mergeRule, Decimal fromMergeConfidence, Decimal toMergeConfidence) {
 
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ListObjectsWithConfidence - mergeRule: ' + mergeRule 
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ListObjectsWithConfidence - mergeRule: ' + mergeRule 
             + ' fromMergeConfidence: ' + fromMergeConfidence.toPlainString()
             + ' toMergeConfidence: ' + toMergeConfidence.toPlainString());
 
@@ -192,10 +195,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         List<C501_Contact_Merge__c> deleteContactMerges = new List<C501_Contact_Merge__c>();
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND Merge_Metric__r.Name = \'' + mergeMetricName + '\'';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
 
         for (C501_Contact_Merge__c mergeObject :Database.query(strSoql)) {
 
@@ -221,8 +227,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
-            delete deleteContactMerges;
+           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
+            Database.delete(deleteContactMerges, false);
         }
 
 		if (mergeObjects <> null && !mergeObjects.isEmpty()) {
@@ -266,10 +272,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         Map<Id, Id> ContactHouseholdMap = new Map<Id, Id>();
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return 0;
+        }
         strSoql += ' AND Merge_Metric__r.Name = :mergeMetricName AND Merge_Action__c <> \'Ignore\'';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
 
         for(C501_Contact_Merge__c mergeObject : Database.Query(strSoql)) {
 
@@ -292,8 +301,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
-            delete deleteContactMerges;
+           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
+            Database.delete(deleteContactMerges, false);
         }
 
         // Check for batch queued merges
@@ -322,8 +331,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         // Jobs with Status = 'Holding' applies to batch jobs in the Apex flex queue (max allowed 100)
         //  https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/api/sforce_api_objects_asyncapexjob.htm
         List<AsyncApexJob> flexQueueJobs = [SELECT Id FROM AsyncApexJob WHERE Status = 'Holding'];
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - flexQueueJobs ' + flexQueueJobs);
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - QueuableJobs ' + Limits.getQueueableJobs() + ' of ' + Limits.getLimitQueueableJobs());
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - flexQueueJobs ' + flexQueueJobs);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - QueuableJobs ' + Limits.getQueueableJobs() + ' of ' + Limits.getLimitQueueableJobs());
         Integer remainingFlexQueueJobs = Limits.getLimitQueueableJobs() - flexQueueJobs.size();
 
         Map<String, Decimal> mergeMetricMap = new Map<String, Decimal>();
@@ -360,8 +369,11 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             // Check Automerge Percentage
             if (!mergeMetricMap.containsKey(mergeCandidate.Merge_Metric__c)) {
                 String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+                if (String.isBlank(strSoql)) {
+                    return numberObjectMerges;
+                }
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges strSoql: ' + strSoql);
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges strSoql: ' + strSoql);
 
                 mergeMetrics = Database.Query(strSoql);
 
@@ -389,7 +401,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
             if (batchMerge) {
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
 
                 if (remainingFlexQueueJobs-- <= 0) {
                     break;
@@ -408,7 +420,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             }
             else {
 
-                System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
+                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
 
                 ObjectsMerge( 
                     new Contact(
@@ -427,8 +439,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
-            delete deleteContactMerges;
+           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
+            Database.delete(deleteContactMerges, false);
         }
 
         return numberObjectMerges;
@@ -481,8 +493,6 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         for (Contact objectItem :duplicateObjects) {
             mergeCandidates.add(objectItem.Id);
         }
-
-        C501_MassMerge_SharedCode.OutputDebugLogClear();
 
         Map<String, Schema.SObjectField> objectFields = Schema.SObjectType.Contact.fields.getMap();
         Map<String, Schema.DescribeFieldResult> fieldMap = new Map<String, Schema.DescribeFieldResult>();
@@ -614,7 +624,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     String masterFieldValue = String.valueOf(masterRecord.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
 
-                    System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
 
                     // Handle Phone
                     //      Future Update: Change to if fieldName contains Phone and Datatype = Phone or can determine if a Phone field based on format? xxxx-xxx
@@ -722,7 +732,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         for(Database.MergeResult res : objectResults) {
             if (!res.isSuccess()) {
                 for (Database.Error err : res.getErrors()) {
-                    System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Contact Merge Exception: ' + err.getMessage());
+                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Contact Merge Exception: ' + err.getMessage());
                 }
 
                 throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Attempt - ' + String.valueOf(res.getErrors()));
@@ -735,16 +745,19 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
         strSoql += ' AND (Contact__c = null OR Merge_Target_Contact__c = null OR Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ')';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
         
         List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoql);
 
         if (!deleteContactMerges.isEmpty()) {
-           System.debug(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
-            delete deleteContactMerges;
+           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
+            Database.delete(deleteContactMerges, false);
         }
    }
 }

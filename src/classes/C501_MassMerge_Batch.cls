@@ -35,7 +35,7 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
   public Boolean ContactMerge = false;
 
   public Database.querylocator start(Database.BatchableContext BC) {
-    System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::start - query: ' + query);
+    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::start - query: ' + query);
     return Database.getQueryLocator(query);
   }
 
@@ -51,8 +51,8 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
         accountDuplicates.add(new Account( Id = mergeCandidate.Merge_Target_Account__c ));
       }
 
-      System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterAccount: ' + String.valueOf(masterAccount));
-      System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - accountDuplicates: ' + String.valueOf(accountDuplicates));
+      C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterAccount: ' + String.valueOf(masterAccount));
+      C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - accountDuplicates: ' + String.valueOf(accountDuplicates));
       C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
 
       try
@@ -61,13 +61,13 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
       }
       catch (C501_MassMerge_SharedCode_Account.C501_MassMerge_SharedCode_AccountException customException)
       {
-        System.debug(LoggingLevel.ERROR, '***** C501_MassMerge_Batch::execute - C501_MassMerge_SharedCode_AccountException: ' + String.valueOf(customException.getMessage()));
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_Batch::execute - C501_MassMerge_SharedCode_AccountException: ' + String.valueOf(customException.getMessage()));
       }
       catch (System.DmlException dmlException) {
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - System.DmlException: ' + String.valueOf(dmlException.getMessage()));
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - System.DmlException: ' + String.valueOf(dmlException.getMessage()));
       }
       catch (Exception generalException) {
-        System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - Exception: ' + String.valueOf(generalException.getMessage()));
+        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - Exception: ' + String.valueOf(generalException.getMessage()));
       }
     }
     else if (ContactMerge) {
@@ -80,8 +80,8 @@ public class C501_MassMerge_Batch implements Database.Batchable<sObject> {
         contactDuplicates.add(new Contact( Id = mergeCandidate.Merge_Target_Contact__c ));
       }
 
-      System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterContact: ' + String.valueOf(masterContact));
-      System.debug(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - contactDuplicates: ' + String.valueOf(contactDuplicates));
+      C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterContact: ' + String.valueOf(masterContact));
+      C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - contactDuplicates: ' + String.valueOf(contactDuplicates));
       C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
       c501MassMerge_SharedCode_Contact.ObjectsMerge(masterContact, contactDuplicates);
     }
