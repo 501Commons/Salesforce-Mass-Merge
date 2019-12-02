@@ -300,6 +300,7 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Merge_Metric__c, Merge_Metric__r.Name';
         strSoql += ' FROM C501_Account_Merge__c';
         strSoql += ' WHERE isDeleted = false';
+        strSoql += ' AND Merge_Action__c <> \'Ignore\'';
 
         if (Test.isRunningTest()) {        
             strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
@@ -400,7 +401,6 @@ public without sharing class C501_MassMerge_SharedCode {
             return;
         }
         strSoqlDeleteAccountMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricIds);
-        strSoqlDeleteAccountMerges += ' AND Merge_Action__c <> \'Ignore\'';
 
         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::DeleteMergeMetricChildren strSoqlDeleteAccountMerges: ' + strSoqlDeleteAccountMerges);
         List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqlDeleteAccountMerges);
@@ -413,7 +413,6 @@ public without sharing class C501_MassMerge_SharedCode {
             return;
         }
         strSoqlDeleteContactMerges += ' AND Merge_Metric__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeMetricIds);
-        strSoqlDeleteContactMerges += ' AND Merge_Action__c <> \'Ignore\'';
 
         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::DeleteMergeMetricChildren strSoqlDeleteContactMerges: ' + strSoqlDeleteContactMerges);
 

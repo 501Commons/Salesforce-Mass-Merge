@@ -275,7 +275,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         if (String.isBlank(strSoql)) {
             return 0;
         }
-        strSoql += ' AND Merge_Metric__r.Name = :mergeMetricName AND Merge_Action__c <> \'Ignore\'';
+        strSoql += ' AND Merge_Metric__r.Name = :mergeMetricName';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);

@@ -39,7 +39,7 @@ public without sharing class C501_MM_Action_Controller {
         Id = mergeMetric.Id;
     }
 
-    //Method that can is called from the Visual Force page action attribute
+    //Method that is called from the Visual Force page action attribute
     public PageReference discoverTrigger() {
 
         C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger Id: ' + Id);

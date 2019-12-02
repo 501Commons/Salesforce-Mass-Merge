@@ -29,7 +29,10 @@
 -->  
  
 <apex:page controller="C501_CTRL_MassMergeAccounts" title="{!$Label.Merge_labelMassMergeTitle}" tabStyle="Account" standardStylesheets="true" sidebar="false">
-    <apex:stylesheet value="{!URLFOR($Resource.sfdo213, '/assets/styles/salesforce-lightning-design-system-vf.min.css')}" />
+
+    <!-- resource generated from https://tools.lightningdesignsystem.com/css-customizer 
+        SLDS Info from https://www.lightningdesignsystem.com/ -->
+    <apex:stylesheet value="{!URLFOR($Resource.c501sldswinter20, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
     <apex:stylesheet value="{!URLFOR($Resource.v4sStaticResources, '/v4s_slds/v4s-common.css')}" />
 
     <style>
@@ -56,13 +59,13 @@
 
     <apex:form id="vfform">
         <c:C501_UTIL_NavigateBack recordId="{!idRedirect}" redirect="{!redirect}"/>
-        <div class="sfdo213">
+        <div class="c501sldswinter20">
             <!-- PAGE SPINNER -->
             <apex:actionStatus id="retrieveStatus" 
                 onstart="document.getElementById('divLoading').style.display='block';"
                 onstop="document.getElementById('divLoading').style.display='none';"/>
             <div class="slds-spinner_container" style="z-index:999;position:fixed;display:none;" id="divLoading">
-                <div class="slds-spinner--brand slds-spinner slds-spinner--medium" style="position:fixed;top:30%;" aria-hidden="false" role="alert">
+                <div class="slds-spinner_brand slds-spinner slds-spinner_medium" style="position:fixed;top:30%;" aria-hidden="false" role="alert">
                     <div class="slds-spinner__dot-a"></div>
                     <div class="slds-spinner__dot-b"></div>
                 </div>
@@ -76,9 +79,9 @@
     
                     <div class="slds-col--padded slds-no-flex slds-align-middle">
                         <div class="slds-button-group" role="group">
-                            <apex:commandButton styleClass="slds-button slds-button--neutral" action="{!Cancel}" value="{!IF(ISNULL(strSaveResults), $Label.Merge_labelButtonCancel, $Label.Merge_labelButtonClose)}" immediate="true" reRender="vfform"/> 
-                            <apex:commandButton styleClass="slds-button slds-button--brand" action="{!SaveAccounts}" value="{!$Label.Merge_labelButtonSave}" id="btnSave" immediate="false" reRender="vfform,ddlAccounts,tblAccounts"/>
-                            <apex:commandButton styleClass="slds-button slds-button--neutral" action="{!SaveAndCloseAccounts}" value="{!$Label.Merge_labelButtonSaveAndClose}" id="btnSaveClose" immediate="false" reRender="vfform"/>
+                            <apex:commandButton styleClass="slds-button slds-button_neutral" action="{!Cancel}" value="{!IF(ISNULL(strSaveResults), $Label.Merge_labelButtonCancel, $Label.Merge_labelButtonClose)}" immediate="true" reRender="vfform"/> 
+                            <apex:commandButton styleClass="slds-button slds-button_brand" action="{!SaveAccounts}" value="{!$Label.Merge_labelButtonSave}" id="btnSave" immediate="false" reRender="vfform,ddlAccounts,tblAccounts"/>
+                            <apex:commandButton styleClass="slds-button slds-button_neutral" action="{!SaveAndCloseAccounts}" value="{!$Label.Merge_labelButtonSaveAndClose}" id="btnSaveClose" immediate="false" reRender="vfform"/>
                         </div>
                     </div>
                 </div>
@@ -90,7 +93,7 @@
                 <div class="slds-grid">
                     <div class="slds-col--padded slds-form-element slds-size--1-of-3">
                         <apex:outputLabel for="ddlAccounts" styleClass="slds-form-element__label" >
-                            Household
+                            Filter by Account
                         </apex:outputLabel>
                         <apex:selectList id="ddlAccounts" value="{!objectFilter.Id}" required="false" size="1" styleClass="slds-select" disabled="{!listSOAccounts.size=1}">
                             <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeAccount}" />
@@ -99,15 +102,17 @@
                     </div>
                     <div class="slds-col--padded slds-form-element slds-size--1-of-3">
                         <apex:outputLabel for="ddlRules" styleClass="slds-form-element__label" >
-                            Rule
+                            Filter by Rule
                         </apex:outputLabel>
                         <apex:selectList id="ddlRules" value="{!objectFilter.C501_Merge_Rule__c}" required="false" size="1" styleClass="slds-select" disabled="{!listSORules.size=1}">
                             <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeRule}" />
                             <apex:selectOptions value="{!listSORules}" /> 
                         </apex:selectList>
                     </div>
+                    <div class="slds-col--padded slds-size--1-of-3"/>
                 </div>
             </fieldset>
+<!--            
             <fieldset class="slds-form slds-m-top--small slds-m-bottom--large">
                 <div class="slds-grid">
                     <div class="slds-col--padded slds-size--1-of-3 slds-form-element">
@@ -129,9 +134,12 @@
                     <div class="slds-col--padded slds-size--1-of-3"/>
                 </div> 
             </fieldset>   
+-->
+
             <apex:dataTable value="{!listAccounts}" var="account" id="tblAccounts" 
-                            styleClass="slds-table slds-table--compact slds-table--bordered"
-                            headerClass="slds-text-heading--label slds-theme--shade" style="width:100%" >                 
+                styleClass="slds-table slds-table_bordered slds-table_striped slds-table_fixed-layout"
+                columnClasses="slds-truncate"
+                headerClass="slds-text-heading--label slds-theme--shade" style="width:100%" >                 
                             
                 <apex:column styleClass="myTD reference" >
                     <apex:facet name="header">Action</apex:facet>

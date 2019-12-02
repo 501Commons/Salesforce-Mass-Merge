@@ -28,14 +28,29 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger C501_Merge_MetricTrigger on C501_Merge_Metric__c (after update) {
+trigger C501_Merge_MetricTrigger on C501_Merge_Metric__c (before delete, after update) {
+
+    if (trigger.isDelete) {
+      for (C501_Merge_Metric__c mergeMetric :trigger.old) {
+
+          List<C501_Contact_Merge__c> contactMerges = [SELECT Id FROM C501_Contact_Merge__c WHERE Merge_Action__c = 'Ignore' AND Merge_Metric__c = :mergeMetric.Id LIMIT 1];
+          List<C501_Account_Merge__c> accountMerges = [SELECT Id FROM C501_Account_Merge__c WHERE Merge_Action__c = 'Ignore' AND Merge_Metric__c = :mergeMetric.Id LIMIT 1];
+          if (contactMerges.size() > 0 || accountMerges.size() > 0) {
+            mergeMetric.addError('Delete Error - 1 or more Ignore records exist for merge metric');
+          }
+
+          continue;
+        }
+
+      return;
+    }
 
     // Merge Metric changed so delete all the merge candidates
-    Set<Id> mergeMetricIds = new Set<Id>();
-    for (C501_Merge_Metric__c mergeMetricId :trigger.new) {
+    Set<Id> mergeMetricChangeIds = new Set<Id>();
+    for (C501_Merge_Metric__c mergeMetric :trigger.new) {
 
-        C501_Merge_Metric__c updatedRecord = Trigger.newMap.get(mergeMetricId.Id);
-        C501_Merge_Metric__c previousRecord = Trigger.oldMap.get(mergeMetricId.Id);
+        C501_Merge_Metric__c updatedRecord = Trigger.newMap.get(mergeMetric.Id);
+        C501_Merge_Metric__c previousRecord = Trigger.oldMap.get(mergeMetric.Id);
 
         if (updatedRecord.Discover_AutoMerge_Objects_Only__c <> previousRecord.Discover_AutoMerge_Objects_Only__c ||
             updatedRecord.Enable_Account_Merge_Discovery__c <> previousRecord.Enable_Account_Merge_Discovery__c ||
@@ -55,11 +70,11 @@ trigger C501_Merge_MetricTrigger on C501_Merge_Metric__c (after update) {
             if (updatedRecord.AutoMerge_Objects__c <> previousRecord.AutoMerge_Objects__c) {
               C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - AutoMerge_Objects__c - current: ' + updatedRecord.AutoMerge_Objects__c + ' previous: ' + previousRecord.AutoMerge_Objects__c);
             }
-            mergeMetricIds.add(mergeMetricId.Id);
+            mergeMetricChangeIds.add(mergeMetric.Id);
         }
     }
     
-    if (!mergeMetricIds.isEmpty() && !Test.isRunningTest()) {
-        C501_MassMerge_SharedCode.DeleteMergeMetricChildren(mergeMetricIds);
+    if (!mergeMetricChangeIds.isEmpty() && !Test.isRunningTest()) {
+        C501_MassMerge_SharedCode.DeleteMergeMetricChildren(mergeMetricChangeIds);
     }
 }

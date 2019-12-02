@@ -4,17 +4,12 @@
         <fullName>MassMergeContacts</fullName>
         <description>C501 Mass Merge Contacts</description>
         <displayedFields>
-            <field>Name</field>
-            <isFieldManaged>false</isFieldManaged>
-            <isRequired>false</isRequired>
-        </displayedFields>
-        <displayedFields>
             <field>C501_Merge_Metric_Name__c</field>
             <isFieldManaged>false</isFieldManaged>
             <isRequired>false</isRequired>
         </displayedFields>
         <displayedFields>
-            <field>C501_Merge_Confidence__c</field>
+            <field>Name</field>
             <isFieldManaged>false</isFieldManaged>
             <isRequired>false</isRequired>
         </displayedFields>

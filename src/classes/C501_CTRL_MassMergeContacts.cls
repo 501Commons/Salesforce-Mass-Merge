@@ -530,6 +530,11 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             // Refresh Contact and Contact Table
             ResetContacts();
 
+            // Trigger Merge Discover
+            C501_MM_Rule_Discover_Accounts.executeFuture();
+            C501_MM_Rule_Discover_ContactsAccount.executeFuture();
+            C501_MM_Rule_Discover_ContactsAccounts.executeFuture();
+
             return null;            
 
         } catch (Exception e) {

@@ -529,6 +529,11 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             // Refresh Account and Account Table
             ResetAccounts();
 
+            // Trigger Merge Discover
+            C501_MM_Rule_Discover_Accounts.executeFuture();
+            C501_MM_Rule_Discover_ContactsAccount.executeFuture();
+            C501_MM_Rule_Discover_ContactsAccounts.executeFuture();
+
             return null;            
 
         } catch (Exception e) {
