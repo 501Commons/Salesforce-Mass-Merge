@@ -149,7 +149,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         Id masterObjectId = [SELECT Id FROM Contact WHERE Name LIKE '%TESTDATA%' ORDER BY Id ASC LIMIT 1].Id;
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
         Test.StartTest();
 
         //point to our VF page
@@ -209,7 +209,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         ctrl.SaveContacts();
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts_TEST::CodeCoverageTests' + ctrl.strSaveResults);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts_TEST::CodeCoverageTests' + ctrl.strSaveResults);
         //System.Assert(ctrl.strSaveResults.startsWith('Error'));
         ctrl.ChangeRule();
         ctrl.SaveContacts();      

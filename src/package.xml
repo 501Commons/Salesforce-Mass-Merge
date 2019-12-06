@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Mass Merge</fullName>
     <types>
         <members>C501_CTRL_MassMergeAccounts</members>
         <members>C501_CTRL_MassMergeAccounts_TEST</members>
@@ -127,6 +126,9 @@
         <members>Contact.C501_Merge_Target__c</members>
         <members>Contact.C501_Other_Address__c</members>
         <members>Contact.Gender__c</members>
+        <members>Mass_Merge_Config__c.Enable_Debug_Logging__c</members>
+        <members>Mass_Merge_Config__c.Enable_Error_Logging__c</members>
+        <members>Mass_Merge_Config__c.Log_Filter__c</members>
         <name>CustomField</name>
     </types>
     <types>
@@ -160,6 +162,7 @@
         <members>C501_Merge_Account_History__c</members>
         <members>C501_Merge_Contact_History__c</members>
         <members>C501_Merge_Metric__c</members>
+        <members>Mass_Merge_Config__c</members>
         <name>CustomObject</name>
     </types>
     <types>

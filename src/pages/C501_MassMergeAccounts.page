@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 -->  
  
-<apex:page controller="C501_CTRL_MassMergeAccounts" title="{!$Label.Merge_labelMassMergeTitle}" tabStyle="Account" standardStylesheets="true" sidebar="false">
+<apex:page controller="C501_CTRL_MassMergeAccounts" title="{!$Label.Merge_labelMassMergeTitle}" tabStyle="Account" action="{!OnPageLoad}" standardStylesheets="true" sidebar="false">
 
     <!-- resource generated from https://tools.lightningdesignsystem.com/css-customizer 
         SLDS Info from https://www.lightningdesignsystem.com/ -->
@@ -153,7 +153,7 @@
                 </apex:column> 
 
                 <!-- Add FieldSet Fields -->
-                <apex:repeat value="{!$ObjectType.Account.FieldSets.MassMergeAccounts}" var="f" >
+                <apex:repeat value="{!fields}" var="f">
                     <apex:column style="width:50px" styleClass="myTD {!f.Type} {!IF($ObjectType['Account'].fields[f].dependentPicklist,
                                                 IF(f.Type == 'picklist', 'dependentPicklistFixup', 'dependentMultiPicklistFixup'),'')}" >
                         <apex:facet name="header">{!f.Label + IF(f.DBRequired, ' *', '')}</apex:facet>

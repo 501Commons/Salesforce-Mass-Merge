@@ -70,7 +70,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>help text for the Mass Merge Contacts page</shortDescription>
-        <value>Merges are grouped in pairs, designated by the Rule - Merge xx.  Select 'Master' on the primary contact to signify which contact fields take precendence on a merge.  Select 'Ignore' if the merge pair should not be merged.  Up to the top 50 merge pairs display by default - you can filter by Contact or Rule.  Update all rows as appropriate, and then click Save.</value>
+        <value>Merges are grouped in pairs, designated by the Rule - Merge xx.  Select &apos;Master&apos; on the primary contact to signify which contact fields take precendence on a merge.  Select &apos;Ignore&apos; if the merge pair should not be merged.  Up to the top 50 merge pairs display by default - you can filter by Contact or Rule.  Update all rows as appropriate, and then click Save.</value>
     </labels>
     <labels>
         <fullName>Merge_labelMassMergeContactTitle</fullName>
@@ -110,7 +110,7 @@
         <language>en_US</language>
         <protected>false</protected>
         <shortDescription>help text for the Mass Merge Accounts page</shortDescription>
-        <value>Merges are grouped in pairs, designated by the Rule - Merge xx.  Select 'Master' on the primary account to signify which account fields take precendence on a merge.  Select 'Ignore' if the merge pair should not be merged.  Up to the top 50 merge pairs display by default - you can filter by Account or Rule.  Update all rows as appropriate, and then click Save.</value>
+        <value>Merges are grouped in pairs, designated by the Rule - Merge xx.  Select &apos;Master&apos; on the primary account to signify which account fields take precendence on a merge.  Select &apos;Ignore&apos; if the merge pair should not be merged.  Up to the top 50 merge pairs display by default - you can filter by Account or Rule.  Update all rows as appropriate, and then click Save.</value>
     </labels>
     <labels>
         <fullName>Merge_labelMassMergeSaveSuccess</fullName>

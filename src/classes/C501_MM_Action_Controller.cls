@@ -42,17 +42,17 @@ public without sharing class C501_MM_Action_Controller {
     //Method that is called from the Visual Force page action attribute
     public PageReference discoverTrigger() {
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger Id: ' + Id);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger Id: ' + Id);
         C501_MM_Rule_Discover_Accounts.executeMetricFuture(Id);
         C501_MM_Rule_Discover_ContactsAccount.executeMetricFuture(Id);
         C501_MM_Rule_Discover_ContactsAccounts.executeMetricFuture(Id);
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger After executeMetric');
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger After executeMetric');
 
         PageReference pageRef = new PageReference('/' + Id);
         pageRef.setRedirect(true);
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger After PageReference');
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::discoverTrigger After PageReference');
 
         // Returns to the original page
         return pageRef;
@@ -61,7 +61,7 @@ public without sharing class C501_MM_Action_Controller {
     //Method that can is called from the Visual Force page action attribute
     public PageReference mergeTrigger() {
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::mergeTrigger Id: ' + Id);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MM_Action_Controller::mergeTrigger Id: ' + Id);
         C501_MM_Rule_Merge.get().executeMetric(Id);
 
         PageReference pageRef = new PageReference('/' + Id);

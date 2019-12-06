@@ -83,7 +83,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
         strSoql += ' ORDER BY Last_Merge_Date__c ASC';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
 
@@ -106,7 +106,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
                 break;
             }
 
@@ -122,7 +122,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
                     if (report.LastModifiedDate <> null && (mergeMetric.Source_Report_LastModifiedDate__c == null || mergeMetric.Source_Report_LastModifiedDate__c <> report.LastModifiedDate)) {
 
                         reportChangeDetected = true;
-                        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
+                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
 
                         mergeMetric.Source_Report_LastModifiedDate__c = report.LastModifiedDate;
                         mergeMetric.Unique_Id__c = report.Id;
@@ -136,7 +136,7 @@ public class C501_MM_Rule_Merge implements Schedulable {
             if (reportChangeDetected || !reportFound) {
 
                 if (!reportFound) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
                 }
 
                 // Queue merge metric to delete children since report changed or report not found
@@ -148,11 +148,11 @@ public class C501_MM_Rule_Merge implements Schedulable {
                 }
                 strSoqldeleteAccountMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
                 List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqldeleteAccountMerges);
 
                 if (!deleteAccountMerges.isEmpty()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
                     Database.delete(deleteAccountMerges, false);
                 }
 
@@ -162,11 +162,11 @@ public class C501_MM_Rule_Merge implements Schedulable {
                 }
                 strSoqldeleteContactMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
                 List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqldeleteContactMerges);
 
                 if (!deleteContactMerges.isEmpty()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
                     Database.delete(deleteContactMerges, false);
                 }
 

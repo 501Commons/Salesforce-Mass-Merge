@@ -110,7 +110,7 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
         strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
 
         List<C501_Merge_Metric__c> mergeMetrics = Database.Query(strSoql);
 
@@ -161,7 +161,7 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
 
             discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Contacts_Across_Accounts.name().replace('_', ' '));
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
                 break;
             }
         }

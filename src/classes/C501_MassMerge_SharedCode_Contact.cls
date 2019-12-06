@@ -48,6 +48,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         //
         String strSoqlWhere = '';
 
+        return strSoqlWhere;
+
+        // Disabled exclude to allow different rules to find the same pair because different rules can have different merge settings (e.g., 1 auto merge but the other doesn't)
+/*
         Datetime currentDateTime = Datetime.now();
         Integer current24Hour = Integer.valueOf(currentDateTime.format('HH'));
         List<Id> listContactIds = new List<Id>();
@@ -56,7 +60,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         if (String.isBlank(strSoql)) {
             return '';
         }
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Contact::WhereFilterByMerges strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode_Contact::WhereFilterByMerges strSoql: ' + strSoql);
         Integer hourMode = math.mod(current24Hour, 3);
         for (C501_Contact_Merge__c mergeRecord :Database.query(strSoql)) {
 
@@ -110,71 +114,74 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         return strSoqlWhere;
+*/
     }
 
     // the list of Contacts
     public List<SelectOption> ListObjectsWithConfidence(String mergeRule, Decimal fromMergeConfidence, Decimal toMergeConfidence) {
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ListObjectsWithConfidence - mergeRule: ' + mergeRule 
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ListObjectsWithConfidence - mergeRule: ' + mergeRule 
             + ' fromMergeConfidence: ' + fromMergeConfidence.toPlainString()
             + ' toMergeConfidence: ' + toMergeConfidence.toPlainString());
 
-        Set<String> setSOUnique = new Set<String>();
-        List<SelectOption> listSO = new List<SelectOption>();
-        listSO.add(new SelectOption('', ''));
+        Map<String, SelectOption> mapSelectOption = new Map<String, SelectOption>();
+        mapSelectOption.put('', new SelectOption('', ''));
 
-        if (String.isBlank(mergeRule)) {
-            for (AggregateResult result : [
-                SELECT Contact__c, Contact__r.Name
-                FROM C501_Contact_Merge__c
-                WHERE Merge_Confidence__c >= :fromMergeConfidence
-                    and Merge_Confidence__c <= :toMergeConfidence
-                    and Merge_Action__c = null 
-                    and isDeleted = false
-                GROUP BY Contact__c, Contact__r.Name
-                LIMIT 999]) {
-
-                    // Attempt to get based on Namespace
-                    String objectFieldValue;
-                    try {
-                        objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Contact__c').toString();
-                    }
-                    catch (System.SObjectException objectException) {
-                        objectFieldValue = result.get('Contact__c').toString();
-                    }
-
-                    listSO.add(new SelectOption(objectFieldValue,
-                        result.get('Name').toString()));
-            }
+        String strSoqlFrom = ' FROM C501_Contact_Merge__c';
+        String strSoqlWhere = ' WHERE Merge_Confidence__c >= '  + fromMergeConfidence;
+        strSoqlWhere += '  AND Merge_Confidence__c <= ' + toMergeConfidence;
+        strSoqlWhere += '  AND Merge_Action__c = null';
+        strSoqlWhere += '  AND isDeleted = false';
+        if (!String.isBlank(mergeRule)) {
+            strSoqlWhere += '  AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
         }
-        else {
-            for (AggregateResult result : [
-                SELECT Contact__c, Contact__r.Name
-                FROM C501_Contact_Merge__c
-                WHERE Merge_Confidence__c >= :fromMergeConfidence
-                    and Merge_Confidence__c <= :toMergeConfidence
-                    and Merge_Action__c = null
-                    and isDeleted = false
-                    and Merge_Metric__r.Name = :mergeRule
-                GROUP BY Contact__c, Contact__r.Name
-                LIMIT 999]) {
 
-                    // Attempt to get based on Namespace
-                    String objectFieldValue;
-                    try {
-                        objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Contact__c').toString();
-                    }
-                    catch (System.SObjectException objectException) {
-                        objectFieldValue = result.get('Contact__c').toString();
-                    }
+        String strSoqlLimit = ' LIMIT 999';
 
-                    listSO.add(new SelectOption(objectFieldValue,
-                        result.get('Name').toString()));
+        // Get Contacts using the Contact_c field
+        //
+        String strSoqlSelect = 'SELECT Contact__c, Contact__r.Name';
+        String strSoqlGroupBy = ' GROUP BY Contact__c, Contact__r.Name';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql1: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit);
+        for (AggregateResult result : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit)) {
+
+            // Attempt to get based on Namespace
+            String objectFieldValue;
+            try {
+                objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Contact__c').toString();
             }
+            catch (System.SObjectException objectException) {
+                objectFieldValue = result.get('Contact__c').toString();
+            }
+
+            mapSelectOption.put(
+                objectFieldValue,
+                new SelectOption(objectFieldValue, result.get('Name').toString()));
+        }
+
+        // Get Contacts using the Merge_Target_Contact_c field
+        //
+        strSoqlSelect = 'SELECT Merge_Target_Contact__c, Merge_Target_Contact__r.Name';
+        strSoqlGroupBy = ' GROUP BY Merge_Target_Contact__c, Merge_Target_Contact__r.Name';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql2: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit);
+        for (AggregateResult result : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit)) {
+
+            // Attempt to get based on Namespace
+            String objectFieldValue;
+            try {
+                objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Merge_Target_Contact__c').toString();
+            }
+            catch (System.SObjectException objectException) {
+                objectFieldValue = result.get('Merge_Target_Contact__c').toString();
+            }
+
+            mapSelectOption.put(
+                objectFieldValue,
+                new SelectOption(objectFieldValue, result.get('Name').toString()));
         }
 
         List<SelectOption> listSOSorted = new List<SelectOption>();
-        listSOSorted = C501_MassMerge_SharedCode.SelectOptionSortByLabel(listSO);
+        listSOSorted = C501_MassMerge_SharedCode.SelectOptionSortByLabel(mapSelectOption.values());
 
         return listSOSorted;
     }
@@ -201,7 +208,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         strSoql += ' AND Merge_Metric__r.Name = \'' + mergeMetricName + '\'';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
 
         for (C501_Contact_Merge__c mergeObject :Database.query(strSoql)) {
 
@@ -227,7 +234,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
+           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
             Database.delete(deleteContactMerges, false);
         }
 
@@ -278,7 +285,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         strSoql += ' AND Merge_Metric__r.Name = :mergeMetricName';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
 
         for(C501_Contact_Merge__c mergeObject : Database.Query(strSoql)) {
 
@@ -301,7 +308,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
+           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates Remove Invalid Contact Merges: ' + deleteContactMerges);
             Database.delete(deleteContactMerges, false);
         }
 
@@ -331,8 +338,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         // Jobs with Status = 'Holding' applies to batch jobs in the Apex flex queue (max allowed 100)
         //  https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/api/sforce_api_objects_asyncapexjob.htm
         List<AsyncApexJob> flexQueueJobs = [SELECT Id FROM AsyncApexJob WHERE Status = 'Holding'];
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - flexQueueJobs ' + flexQueueJobs);
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - QueuableJobs ' + Limits.getQueueableJobs() + ' of ' + Limits.getLimitQueueableJobs());
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - flexQueueJobs ' + flexQueueJobs);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - QueuableJobs ' + Limits.getQueueableJobs() + ' of ' + Limits.getLimitQueueableJobs());
         Integer remainingFlexQueueJobs = Limits.getLimitQueueableJobs() - flexQueueJobs.size();
 
         Map<String, Decimal> mergeMetricMap = new Map<String, Decimal>();
@@ -373,7 +380,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     return numberObjectMerges;
                 }
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges strSoql: ' + strSoql);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges strSoql: ' + strSoql);
 
                 mergeMetrics = Database.Query(strSoql);
 
@@ -401,7 +408,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
             if (batchMerge) {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
 
                 if (remainingFlexQueueJobs-- <= 0) {
                     break;
@@ -420,7 +427,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             }
             else {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
 
                 ObjectsMerge( 
                     new Contact(
@@ -439,7 +446,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
+           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
             Database.delete(deleteContactMerges, false);
         }
 
@@ -462,7 +469,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     availableFieldValues.remove(availableFieldValues.indexOf(availableFieldValue));
                     updateRecord.put(fieldName, availableFieldValue);
                 } catch (Exception e) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Object::ObjectsFieldMerge_Contact_BackfillFields Update Merge Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Object::ObjectsFieldMerge_Contact_BackfillFields Update Merge Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                 }
             }
         }
@@ -520,7 +527,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {
-                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -529,14 +536,14 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 if (string.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
-                    //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
                     continue;
                 }
 
                 fieldMap.put(fieldName, fResult);
             }
             else {
-                //C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
+                //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
             }
         }
 
@@ -550,7 +557,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
             if (objectList == null || objectList.size() != mergeCandidates.size()) {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to return expected number of objects');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to return expected number of objects');
 
                 return;
             }
@@ -580,13 +587,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     for (String addressType :C501_MassMerge_SharedCode_Object.AddressTypesAvailable) {
                         for (String addressField :C501_MassMerge_SharedCode_Object.AddressFieldsAvailable) {
 
-                            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - check address field: ' + addressType + addressField);
+                            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - check address field: ' + addressType + addressField);
 
                             try {
                                 if (masterRecord.get(addressType + addressField) != null &&
                                     !String.isBlank(String.valueOf(masterRecord.get(addressType + addressField)))) {
 
-                                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
 
                                     addressTypesSkip.add(addressType);
                                     break;
@@ -594,7 +601,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                             }
                             catch (Exception e) {
                                 if (!e.getMessage().contains('Invalid field')) {
-                                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge check address field exception: ' + String.valueOf(e.getMessage()));
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge check address field exception: ' + String.valueOf(e.getMessage()));
                                 }
                             }
                         }
@@ -604,10 +611,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 }
             }
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
 
             if (masterRecord == null) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
                 throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Unable to find Master Object - ' + String.valueOf(masterObject));
             }
 
@@ -624,7 +631,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     String masterFieldValue = String.valueOf(masterRecord.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
 
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
 
                     // Handle Phone
                     //      Future Update: Change to if fieldName contains Phone and Datatype = Phone or can determine if a Phone field based on format? xxxx-xxx
@@ -646,7 +653,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                     for (String addressType : addressTypesSkip) {
                         for (String addressField : C501_MassMerge_SharedCode.AddressFieldsAvailable) {
                             if (fieldName.equalsIgnoreCase(addressType + addressField)) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
+                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
                                 skipMasterFieldUpdate = true;
                             }
                         }
@@ -665,7 +672,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                             try{
                                 masterRecord.put(fieldName, objectItem.get(fieldName));
                             } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                             }
                         }
                         else if (!String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
@@ -710,7 +717,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 }
             }
         } catch (Exception e) {
-            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update fields exception: ' + String.valueOf(e.getMessage()));
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update fields exception: ' + String.valueOf(e.getMessage()));
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
@@ -732,7 +739,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         for(Database.MergeResult res : objectResults) {
             if (!res.isSuccess()) {
                 for (Database.Error err : res.getErrors()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Contact Merge Exception: ' + err.getMessage());
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Contact Merge Exception: ' + err.getMessage());
                 }
 
                 throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Attempt - ' + String.valueOf(res.getErrors()));
@@ -751,12 +758,12 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         strSoql += ' AND (Contact__c = null OR Merge_Target_Contact__c = null OR Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ')';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge strSoql: ' + strSoql);
         
         List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoql);
 
         if (!deleteContactMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
+           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
             Database.delete(deleteContactMerges, false);
         }
    }

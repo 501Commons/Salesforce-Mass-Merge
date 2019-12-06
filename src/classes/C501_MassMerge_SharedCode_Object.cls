@@ -61,7 +61,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             // NPSP? then ignore Phone field because is automatically updated based on npe01__PreferredPhone__c picklist
             //
             if (C501_MassMerge_SharedCode.IsNPSPInstalled && fieldName.equalsIgnoreCase('Phone')) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge_Contact_HandlePhone Phone Field Skip since NPSP installed');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge_Contact_HandlePhone Phone Field Skip since NPSP installed');
             }
             else {
                 handlePhoneField = true;
@@ -90,7 +90,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
 
             // NPSP? then ignore Email field because that is populated automatically based on npe01__Preferred_Email__c picklist
             if (C501_MassMerge_SharedCode.IsNPSPInstalled && fieldName.equalsIgnoreCase('Email')) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge_Contact_HandleEmail Email Field Skip since NPSP installed');
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge_Contact_HandleEmail Email Field Skip since NPSP installed');
             }
             else {
                 handleEmailField = true;
@@ -120,7 +120,7 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             strSoql += ' AND Name = \'' + mergeMetricName + '\'';
             strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
             mergeMetrics = Database.Query(strSoql);
 
             if (mergeMetrics.isEmpty()) {
@@ -179,11 +179,11 @@ public without sharing class C501_MassMerge_SharedCode_Object {
         strSoql += ' AND (Account__c = null OR Merge_Target_Account__c = null OR Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactAccounts.values()) + ')';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact strSoql: ' + strSoql);
         List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoql);
 
         if (!deleteAccountMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(true, LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
+           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****C501_MassMerge_SharedCode::ObjectsMerge_Contact Delete Account Merges : ' + deleteAccountMerges);
             Database.delete(deleteAccountMerges, false);
         }
 

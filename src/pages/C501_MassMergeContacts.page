@@ -28,7 +28,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 -->  
  
-<apex:page controller="C501_CTRL_MassMergeContacts" title="{!$Label.Merge_labelMassMergeContactTitle}" tabStyle="Contact" standardStylesheets="true" sidebar="false">
+<apex:page controller="C501_CTRL_MassMergeContacts" title="{!$Label.Merge_labelMassMergeContactTitle}" action="{!OnPageLoad}" tabStyle="Contact" standardStylesheets="true" sidebar="false">
 
     <!-- resource generated from https://tools.lightningdesignsystem.com/css-customizer 
     SLDS Info from https://www.lightningdesignsystem.com/ -->
@@ -135,20 +135,20 @@
                 </div> 
             </fieldset>   
 -->
-            <apex:dataTable value="{!listContacts}" var="Contact" id="tblContacts" 
+            <apex:dataTable value="{!listContacts}" var="contact" id="tblContacts" 
                 styleClass="slds-table slds-table_bordered slds-table_striped slds-table_fixed-layout"
                 columnClasses="slds-truncate"
                 headerClass="slds-text-heading--label slds-theme--shade" style="width:100%" >                 
                             
                 <apex:column styleClass="myTD reference" >
                     <apex:facet name="header">Action</apex:facet>
-                    <apex:inputField value="{!Contact.C501_Merge_Action__c}" styleClass="picklist" required="false" >
+                    <apex:inputField value="{!contact.C501_Merge_Action__c}" styleClass="picklist" required="false" >
                     </apex:inputField>
                 </apex:column> 
 
                 <apex:column styleClass="myTD reference" >
                     <apex:facet name="header">Contact</apex:facet>
-                    <apex:outputLink value="/{!Contact.Id}">Go To Contact</apex:outputLink>
+                    <apex:outputLink value="/{!contact.Id}">Go To Contact</apex:outputLink>
                 </apex:column> 
 
                 <!-- Add FieldSet Fields -->
@@ -157,7 +157,7 @@
                                                 IF(f.Type == 'picklist', 'dependentPicklistFixup', 'dependentMultiPicklistFixup'),'')}" >
                         <apex:facet name="header">{!f.Label + IF(f.DBRequired, ' *', '')}</apex:facet>
 
-                        <apex:outputField value="{!Contact[f]}" 
+                        <apex:outputField value="{!contact[f]}" 
                                     styleClass="{!CASE(f.Type, 
                                                     'reference', 'lookupOutput', 
                                                     'picklist', 'slds-select',
