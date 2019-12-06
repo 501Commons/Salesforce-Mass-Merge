@@ -292,8 +292,8 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             for (SelectOption option : listSOContacts) {
                 objectIds.add(option.getValue());
 
-                // Performance: Only allow 50 at a time to load in the webpage
-                if (objectIds.size() >= 50) {
+                // Performance: Only allow 100 at a time to load in the webpage
+                if (objectIds.size() >= 100) {
                     break;
                 }
             }
@@ -314,7 +314,9 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             strSoql += ' AND (Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ') AND Merge_Action__c = null';
             strSoql += strRuleSoql;
             strSoql += ' ORDER BY Contact__r.Name ASC';
-            strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+            // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
+            strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
 
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts No ObjectFilter Query strSoql: ' + strSoql);
 
@@ -360,7 +362,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         String strSoql = 'SELECT ' + String.join(listStrFields, ',');
         strSoql += ' FROM Contact WHERE Id in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactsMergeIds);
         strSoql += ' order by C501_Merge_Metric_Name__c ASC NULLS FIRST';
-        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize());
         
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts Contact Query strSoql: ' + strSoql);
 

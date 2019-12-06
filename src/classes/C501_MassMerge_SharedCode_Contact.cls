@@ -136,7 +136,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             strSoqlWhere += '  AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
         }
 
-        String strSoqlLimit = ' LIMIT 999';
+        // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
+        String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
 
         // Get Contacts using the Contact_c field
         //

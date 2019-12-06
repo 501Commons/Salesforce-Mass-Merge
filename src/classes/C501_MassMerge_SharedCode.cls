@@ -177,7 +177,7 @@ public without sharing class C501_MassMerge_SharedCode {
                 }
             }
 
-            if (!insertError) {
+            if (!insertError || (insertDebugLogs.size() > (C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2))) {
                 insertDebugLogs.clear();
             }
         }
@@ -799,6 +799,12 @@ public without sharing class C501_MassMerge_SharedCode {
         }
 
         return maximumLimitSize;
+    }
+
+    public static Integer GetMaximumCollectionSize() {
+
+        // Salesforce max collection size is 1000
+        return C501_MassMerge_SharedCode.GetMaximumLimitSize(1) < 999 ? C501_MassMerge_SharedCode.GetMaximumLimitSize(1) : 999;
     }
 
     public static Boolean NearSalesforceLimits() {
