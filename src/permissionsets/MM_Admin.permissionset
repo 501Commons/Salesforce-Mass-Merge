@@ -337,6 +337,11 @@
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Confidence__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
         <editable>true</editable>
         <field>C501_Merge_Metric__c.Description__c</field>
         <readable>true</readable>
@@ -355,6 +360,26 @@
         <editable>true</editable>
         <field>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</field>
         <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Last_Account_Discover_GroupByHavingCount__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Last_Contact_Discover_GroupByHavingCount__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Last_ContactsAccount_Discover_Date__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Last_ContactsAccounts_Discover_Date__c</field>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
@@ -395,6 +420,11 @@
         <editable>false</editable>
         <field>C501_Merge_Metric__c.Total_Unassigned_Contacts__c</field>
         <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>C501_Merge_Metric__c.Unique_Id__c</field>
+        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>

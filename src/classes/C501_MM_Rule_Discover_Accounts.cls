@@ -149,15 +149,34 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
                 continue;
             }
 
-            mergeMetric.Last_Discover_Date__c = System.now();
-            mergeMetric.Unique_Id__c = reportId;
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetric.Name + ' Last Account Discover Date (Before): ' + (mergeMetric.Last_Discover_Date__c == null ? 'null' : mergeMetric.Last_Discover_Date__c.format()));
 
-            Database.SaveResult updateResult = Database.update(mergeMetric, false);
-            if (!updateResult.isSuccess()) {
-                for(Database.Error resultError : updateResult.getErrors()) {
-                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics');
-                }                        
-            }
+            C501_Merge_Metric__c mergeMetricUpdate = new C501_Merge_Metric__c(
+                Id = mergeMetric.Id,
+                Name = mergeMetric.Name,
+                Last_Discover_Date__c = System.now(),
+                Unique_Id__c = reportId
+            );
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetricUpdate.Name + ' Last Account Discover Date (After Set): ' + mergeMetricUpdate.Last_Discover_Date__c.format());
+
+            Integer retriesRemaining = C501_MassMerge_SharedCode.MAX_RETRY_DATABASE;
+            do {
+                Database.SaveResult updateResult = Database.update(mergeMetricUpdate, false);
+                if (!updateResult.isSuccess()) {
+                    for(Database.Error resultError : updateResult.getErrors()) {
+                        C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics');
+                        if (!C501_MassMerge_SharedCode.RetryDatabaseError(resultError)) {
+                            retriesRemaining = 0;
+                        }
+                    }                        
+                } else {
+                    break;
+                }
+            } while (retriesRemaining-- > 0);
+
+            mergeMetricUpdate = [SELECT Id, Name, Last_Discover_Date__c FROM C501_Merge_Metric__c WHERE Id = :mergeMetricUpdate.Id LIMIT 1];
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetricUpdate.Name + ' Last Account Discover Date (After Update): ' + mergeMetricUpdate.Last_Discover_Date__c.format());
 
             discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Account.name());
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {

@@ -128,10 +128,10 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         mapSelectOption.put('', new SelectOption('', ''));
 
         String strSoqlFrom = ' FROM C501_Account_Merge__c';
-        String strSoqlWhere = ' WHERE Merge_Confidence__c >= '  + fromMergeConfidence;
-        strSoqlWhere += '  AND Merge_Confidence__c <= ' + toMergeConfidence;
-        strSoqlWhere += '  AND Merge_Action__c = null';
-        strSoqlWhere += '  AND isDeleted = false';
+        String strSoqlWhere = ' WHERE Merge_Action__c = null';
+        strSoqlWhere += ' AND isDeleted = false';
+        //strSoqlWhere += ' AND Merge_Confidence__c >= '  + fromMergeConfidence;
+        //strSoqlWhere += ' AND Merge_Confidence__c <= ' + toMergeConfidence;
         if (!String.isBlank(mergeRule)) {
             strSoqlWhere += '  AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
         }

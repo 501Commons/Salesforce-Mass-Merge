@@ -104,13 +104,26 @@ public without sharing class C501_MassMerge_SharedCode {
         return multiSelectList;
     }
 
+    public static final Integer MAX_RETRY_DATABASE = 5;
+    public static Boolean RetryDatabaseError(Database.Error resultError) {
+
+        String statusCode = String.valueOf(resultError.getStatusCode());
+
+        // UNABLE_TO_LOCK_ROW because can happen with all the event firing so retry
+        if (statusCode.contains('UNABLE_TO_LOCK_ROW')) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static Boolean LogDatabaseError(Database.Error resultError, String callingMethod) {
 
         String statusCode = String.valueOf(resultError.getStatusCode());
 
         // Ignore UNABLE_TO_LOCK_ROW because can happen with all the event firing - performance issue later to try an figure it out
         if (statusCode.contains('UNABLE_TO_LOCK_ROW')) {
-            return false;
+//            return false;
         }
 
         // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
@@ -322,7 +335,8 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Total_Unassigned_Accounts__c, Total_Unassigned_Contacts__c,';
         strSoql += ' Source_Report__c, Source_Report_LastModifiedDate__c, Source_Object__c, Source_Object_Account_Id__c, Source_Object_Contact_Id__c,';
         strSoql += ' AutoMerge_Percentage__c, AutoMerge_Objects__c,';
-        strSoql += ' Last_Discover_Date__c, Last_Merge_Date__c,';
+        strSoql += ' Last_Discover_Date__c, Last_ContactsAccount_Discover_Date__c, Last_ContactsAccounts_Discover_Date__c, Last_Merge_Date__c,';
+        strSoql += ' Last_Account_Discover_GroupByHavingCount__c, Last_Contact_Discover_GroupByHavingCount__c,';
         strSoql += ' Enable_Account_Merge_Discovery__c, Enable_Contact_Merge_Discovery__c, Discover_AutoMerge_Objects_Only__c';
         strSoql += ' FROM C501_Merge_Metric__c';
         strSoql += ' WHERE isDeleted = false';
@@ -573,35 +587,34 @@ public without sharing class C501_MassMerge_SharedCode {
         }
 
         String cronExpression, scheduleJobName;
-        Integer triggerNumberDiscover = 1;
-        Integer triggerNumberMerge = 1;
-        for (Integer i = 0; i <= 59; i += 2) {
+        for (Integer i = 5; i <= 59; i += 5) {
 
             cronExpression = '0 ' + String.valueOf(i) + ' * * * ?';
 
             try {
-                // Schedule discover every 10 minutes otherwise schedule merge
-                if (math.mod(i, 10) == 0) {
+                if (math.mod(i, 35) == 0) {
 
-                    scheduleJobName = C501_MM_Rule_Discover_Accounts.class.getName() + '_' + (triggerNumberDiscover <= 9 ? '0' : '') + String.valueOf(triggerNumberDiscover);
+                    scheduleJobName = C501_MM_Rule_Discover_Accounts.class.getName() + '_' + (i <= 9 ? '0' : '') + String.valueOf(i);
                     if (!scheduledJobs.contains(scheduleJobName) && !Test.isRunningTest()) {
                         System.schedule(scheduleJobName, cronExpression, new C501_MM_Rule_Discover_Accounts());
                     }
+                }
+                else if (math.mod(i, 40) == 0) {
 
-                    scheduleJobName = C501_MM_Rule_Discover_ContactsAccount.class.getName() + '_' + (triggerNumberDiscover <= 9 ? '0' : '') + String.valueOf(triggerNumberDiscover);
+                    scheduleJobName = C501_MM_Rule_Discover_ContactsAccount.class.getName() + '_' + (i <= 9 ? '0' : '') + String.valueOf(i);
                     if (!scheduledJobs.contains(scheduleJobName) && !Test.isRunningTest()) {
                         System.schedule(scheduleJobName, cronExpression, new C501_MM_Rule_Discover_ContactsAccount());
                     }
+                }
+                else if (math.mod(i, 45) == 0) {
 
-                    scheduleJobName = C501_MM_Rule_Discover_ContactsAccounts.class.getName() + '_' + (triggerNumberDiscover <= 9 ? '0' : '') + String.valueOf(triggerNumberDiscover);
+                    scheduleJobName = C501_MM_Rule_Discover_ContactsAccounts.class.getName() + '_' + (i <= 9 ? '0' : '') + String.valueOf(i);
                     if (!scheduledJobs.contains(scheduleJobName) && !Test.isRunningTest()) {
                         System.schedule(scheduleJobName, cronExpression, new C501_MM_Rule_Discover_ContactsAccounts());
                     }
-
-                    triggerNumberDiscover++;
                 }
                 else {
-                    scheduleJobName = C501_MM_Rule_Merge.class.getName() + '_' + (triggerNumberMerge <= 9 ? '0' : '') + String.valueOf(triggerNumberMerge);
+                    scheduleJobName = C501_MM_Rule_Merge.class.getName() + '_' + (i <= 9 ? '0' : '') + String.valueOf(i);
 
                     if (scheduledJobs.contains(scheduleJobName)) {
                         continue;
@@ -610,8 +623,6 @@ public without sharing class C501_MassMerge_SharedCode {
                     if (!Test.isRunningTest()) {
                         System.schedule(scheduleJobName, cronExpression, new C501_MM_Rule_Merge());
                     }
-
-                    triggerNumberMerge++;
                 }
             }
             catch (System.AsyncException exceptionAsync) {
@@ -787,15 +798,18 @@ public without sharing class C501_MassMerge_SharedCode {
         return maximumDMLLimitSize < maximumLimitSize ? maximumDMLLimitSize : maximumLimitSize;
     }
 
-    public static Integer GetMaximumLimitSize(Integer groupByNumberFields) {
+    public static Integer GetMaximumLimitSize(Integer groupByHavingCountMax) {
+
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::GetMaximumLimitSize - groupByHavingCountMax: ' + groupByHavingCountMax);
 
         Integer percentageMultiple = 98;
         Integer maximumLimitSize = ((Limits.getLimitQueryRows() - Limits.getQueryRows()) / 100) * percentageMultiple;
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::GetMaximumLimitSize - Limits.getLimitQueryRows(): ' + Limits.getLimitQueryRows() + ' Limits.getQueryRows(): ' + Limits.getQueryRows());
 
-        // Check for groupByNumberFields which count 1 query row per group by field for each query row
+        // Check for groupByHavingCountMax because each aggregate row is a count of all the rows to create the aggregate
         //  https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_SOQL_agg_fns.htm
-        if (groupByNumberFields > 1) {
-            return maximumLimitSize / (groupByNumberFields + 1);
+        if (groupByHavingCountMax > 1) {
+            return maximumLimitSize / groupByHavingCountMax;
         }
 
         return maximumLimitSize;

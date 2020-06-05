@@ -79,7 +79,7 @@ public class C501_MM_Rule_Discover {
 		// Perform all SOQL Queries outside of loop to avoid Salesforce Governor Limits: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_gov_limits.htm
 		//
 
-        strSoql += ' ORDER BY Last_Discover_Date__c ASC NULLS FIRST';
+        strSoql += ' ORDER BY LastModifiedDate ASC NULLS FIRST';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoql);
@@ -115,9 +115,11 @@ public class C501_MM_Rule_Discover {
                     if (mergeMetric.Source_Report_LastModifiedDate__c == null || mergeMetric.Source_Report_LastModifiedDate__c <> report.LastModifiedDate) {
 
                         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MM_Rule_Discover:execute - Merge Metric linked Report changed so clear out all merge candidates: ' + String.valueOf(mergeMetric));
-                        mergeMetric.Source_Report_LastModifiedDate__c = report.LastModifiedDate;
-                        mergeMetric.Unique_Id__c = report.Id;
-                        mergeMetricsUpdate.add(mergeMetric);
+                        mergeMetricsUpdate.add(new C501_Merge_Metric__c(
+                            Id = mergeMetric.Id,
+                            Source_Report_LastModifiedDate__c = report.LastModifiedDate,
+                            Unique_Id__c = report.Id
+                        ));
 
                         // Queue merge metric to delete children since report changed
                         mergeMetricDeleteChildren.add(mergeMetric.Id);
@@ -357,8 +359,16 @@ public class C501_MM_Rule_Discover {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlGroupBy);
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlOrderBy);
 
-        Integer maxCountInterval = 10;
-        for (Integer countIndex = 2; countIndex <= maxCountInterval; countIndex++) {
+        // ToDo: Performance issue - maxCountInterval means can only support Discover merge candidates if Account has maxCountInterval or less duplicates
+        Integer maxCountInterval = 100;
+
+        Integer startCountIndex = (mergeMetric.Last_Account_Discover_GroupByHavingCount__c == null) ? 2 : Integer.valueOf(mergeMetric.Last_Account_Discover_GroupByHavingCount__c);
+        startCountIndex = (startCountIndex < 2 || startCountIndex >= maxCountInterval) ? 2 : startCountIndex;
+        for (Integer countIndex = startCountIndex; countIndex <= (startCountIndex + 5); countIndex++) {
+
+            if (!Test.isRunningTest()) { 
+                mergeMetric.Last_Account_Discover_GroupByHavingCount__c = countIndex;
+            }
 
             String countInterval = (countIndex >= maxCountInterval) ? ' >= ' + String.valueOf(countIndex) : ' = ' + String.valueOf(countIndex);
 
@@ -369,7 +379,7 @@ public class C501_MM_Rule_Discover {
 
             String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Account_Id__c + ') ' + countInterval;
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlHaving);
-            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
+            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(countIndex));
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlLimit);
 
             AggregateResult[] allAggregatedByAccounts;
@@ -380,11 +390,17 @@ public class C501_MM_Rule_Discover {
             catch (System.LimitException exLimit) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL System.LimitException Error: ' + exLimit.getMessage());
+
+                Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Account_Discover_GroupByHavingCount__c = countIndex), false);
+
                 return;
             }
             catch (Exception ex) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByAccounts SOQL Error: ' + ex.getMessage());
+
+                Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Account_Discover_GroupByHavingCount__c = countIndex), false);
+
                 return;
             }
 
@@ -392,11 +408,17 @@ public class C501_MM_Rule_Discover {
                 continue;
             }
 
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts allAggregatedByAccounts size: ' + allAggregatedByAccounts.size());
+            String strSoqlLimitAfter = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(countIndex));
+
             // Filter out account ids already associated with merge metric
             Set<Id> existingAccountIds = new Set<Id>();
 
             String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
             if (String.isBlank(strSoql)) {
+
+                Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Account_Discover_GroupByHavingCount__c = countIndex), false);
+
                 return;
             }
             strSoql += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
@@ -438,7 +460,7 @@ public class C501_MM_Rule_Discover {
                 Map<Id, Integer> existingAccountSizes = new Map<Id, Integer>();
 
                 strSoql = 'SELECT AccountId, Count(Id) NumberOfMembers FROM Contact WHERE AccountId IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeAccountIds);
-                strSoql += ' group by AccountId HAVING Count(Id) > 0 LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+                strSoql += ' GROUP BY AccountId HAVING Count(Id) > 0 LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByAccounts strSoql2: ' + strSoql);
 
@@ -572,6 +594,8 @@ public class C501_MM_Rule_Discover {
                 c501MassMerge_SharedCode_Account.InsertObjectMergeCandidates(mergeMetric, mergeAccounts.values());
             }
         }     
+
+        Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Account_Discover_GroupByHavingCount__c = mergeMetric.Last_Account_Discover_GroupByHavingCount__c), false);
     }
 
     public void ProcessReportByContacts(C501_Merge_Metric__c mergeMetric, String foriegnKey, List<String> detailColumnsChecked, List<String> mergeCriteriaValues, List<Reports.ReportFilter> reportFilters, String additionalGroupByField) {
@@ -653,9 +677,17 @@ public class C501_MM_Rule_Discover {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlGroupBy);
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlOrderBy);
 
-        Integer maxCountInterval = 10;
-        for (Integer countIndex = 2; countIndex <= maxCountInterval; countIndex++) {
+        // ToDo: Performance issue - maxCountInterval means can only support Discover merge candidates if Account has maxCountInterval or less duplicates
+        Integer maxCountInterval = 100;
 
+        Integer startCountIndex = (mergeMetric.Last_Contact_Discover_GroupByHavingCount__c == null) ? 2 : Integer.valueOf(mergeMetric.Last_Contact_Discover_GroupByHavingCount__c);
+        startCountIndex = (startCountIndex < 2 || startCountIndex >= maxCountInterval) ? 2 : startCountIndex;
+        for (Integer countIndex = startCountIndex; countIndex <= (startCountIndex + 5); countIndex++) {
+
+            if (!Test.isRunningTest()) { 
+                mergeMetric.Last_Contact_Discover_GroupByHavingCount__c = countIndex;
+            }
+            
             String countInterval = (countIndex >= maxCountInterval) ? ' >= ' + String.valueOf(countIndex) : ' = ' + String.valueOf(countIndex);
 
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
@@ -665,7 +697,7 @@ public class C501_MM_Rule_Discover {
 
             String strSoqlHaving = ' HAVING Count(' + mergeMetric.Source_Object_Contact_Id__c + ') ' + countInterval;
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlHaving);
-            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(groupByFields.size()));
+            String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(countIndex));
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, strSoqlLimit);
 
             AggregateResult[] allAggregatedByContacts;
@@ -676,17 +708,26 @@ public class C501_MM_Rule_Discover {
             catch (System.LimitException exLimit) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL System.LimitException Error: ' + exLimit.getMessage());
+
+                Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Contact_Discover_GroupByHavingCount__c = countIndex), false);
+
                 return;
             }
             catch (Exception ex) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlHaving + strSoqlOrderBy + strSoqlLimit);
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Discover:ProcessReportByContacts SOQL Error: ' + ex.getMessage());
+
+                Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Contact_Discover_GroupByHavingCount__c = countIndex), false);
+
                 return;
             }
 
             if (allAggregatedByContacts.isEmpty()) {
                 continue;
             }
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessReportByContacts allAggregatedByContacts size: ' + allAggregatedByContacts.size());
+            String strSoqlLimitAfter = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(countIndex));
 
             Map<String, C501_Contact_Merge__c> mergeContacts = new Map<String, C501_Contact_Merge__c>();
             String uniqueId, minId, maxId;
@@ -723,6 +764,8 @@ public class C501_MM_Rule_Discover {
                 c501MassMerge_SharedCode_Contact.InsertObjectMergeCandidates(mergeMetric, mergeContacts.values());
             }
         }
+
+        Database.update(new C501_Merge_Metric__c(Id = mergeMetric.Id, Last_Contact_Discover_GroupByHavingCount__c = mergeMetric.Last_Contact_Discover_GroupByHavingCount__c), false);
     }
 
     // Report Column Field Names don't always match the Object Field Name

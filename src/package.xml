@@ -102,6 +102,10 @@
         <members>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</members>
         <members>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</members>
+        <members>C501_Merge_Metric__c.Last_Account_Discover_GroupByHavingCount__c</members>
+        <members>C501_Merge_Metric__c.Last_Contact_Discover_GroupByHavingCount__c</members>
+        <members>C501_Merge_Metric__c.Last_ContactsAccount_Discover_Date__c</members>
+        <members>C501_Merge_Metric__c.Last_ContactsAccounts_Discover_Date__c</members>
         <members>C501_Merge_Metric__c.Last_Discover_Date__c</members>
         <members>C501_Merge_Metric__c.Last_Merge_Date__c</members>
         <members>C501_Merge_Metric__c.Source_Object_Account_Id__c</members>

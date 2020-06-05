@@ -54,10 +54,10 @@
     <enableStreamingApi>true</enableStreamingApi>
     <fields>
         <fullName>AutoMerge_Objects__c</fullName>
-        <description>Picklist values for what types of merging are allowed.</description>
+        <description>Auto-Merge Object(s) is a list of objects allowed to merge during auto-merge process.</description>
         <externalId>false</externalId>
-        <inlineHelpText>Merging types allowed</inlineHelpText>
-        <label>AutoMerge Objects</label>
+        <inlineHelpText>Auto-Merge Object(s) is a list of objects allowed to merge during auto-merge process.</inlineHelpText>
+        <label>Auto-Merge Object(s)</label>
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>MultiselectPicklist</type>
@@ -105,7 +105,7 @@
         <inlineHelpText>Default merge candidate confidence percentage</inlineHelpText>
         <label>Confidence</label>
         <precision>18</precision>
-        <required>true</required>
+        <required>false</required>
         <scale>0</scale>
         <trackTrending>false</trackTrending>
         <type>Percent</type>
@@ -122,10 +122,10 @@
     <fields>
         <fullName>Discover_AutoMerge_Objects_Only__c</fullName>
         <defaultValue>false</defaultValue>
-        <description>Only discover potential merges based on the automerge objects selected.</description>
+        <description>Only discover potential merge candidates based on the auto-merge object(s) selected.</description>
         <externalId>false</externalId>
-        <inlineHelpText>Only discover potential merges based on the automerge objects selected.</inlineHelpText>
-        <label>Discover AutoMerge Objects Only</label>
+        <inlineHelpText>Only discover potential merge candidates based on the auto-merge object(s) selected.</inlineHelpText>
+        <label>Auto-Merge Object(s) Discovery Only</label>
         <trackTrending>false</trackTrending>
         <type>Checkbox</type>
     </fields>
@@ -134,7 +134,7 @@
         <defaultValue>true</defaultValue>
         <description>When enabled, background processing will attempt to discover account merge candidates.</description>
         <externalId>false</externalId>
-        <inlineHelpText>Enable to discover account merge candidates</inlineHelpText>
+        <inlineHelpText>When enabled, background processing will attempt to discover account merge candidates.</inlineHelpText>
         <label>Enable Account Merge Discovery</label>
         <trackTrending>false</trackTrending>
         <type>Checkbox</type>
@@ -144,15 +144,57 @@
         <defaultValue>true</defaultValue>
         <description>When enabled, background processing will attempt to discover contact merge candidates.</description>
         <externalId>false</externalId>
-        <inlineHelpText>Enable to discover contact merge candidates</inlineHelpText>
+        <inlineHelpText>When enabled, background processing will attempt to discover contact merge candidates.</inlineHelpText>
         <label>Enable Contact Merge Discovery</label>
         <trackTrending>false</trackTrending>
         <type>Checkbox</type>
     </fields>
     <fields>
+        <fullName>Last_Account_Discover_GroupByHavingCount__c</fullName>
+        <description>Used to reference the last having count for discover</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Used to reference the last having count for discover</inlineHelpText>
+        <label>Last Account Discover GroupByHavingCount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Last_Contact_Discover_GroupByHavingCount__c</fullName>
+        <description>Used to reference the last having count for contact discover</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Used to reference the last having count for contact discover</inlineHelpText>
+        <label>Last Contact Discover GroupByHavingCount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Last_ContactsAccount_Discover_Date__c</fullName>
+        <externalId>false</externalId>
+        <label>Last ContactsAccount Discover Date</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>DateTime</type>
+    </fields>
+    <fields>
+        <fullName>Last_ContactsAccounts_Discover_Date__c</fullName>
+        <externalId>false</externalId>
+        <label>Last ContactsAccounts Discover Date</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>DateTime</type>
+    </fields>
+    <fields>
         <fullName>Last_Discover_Date__c</fullName>
         <externalId>false</externalId>
-        <label>Last Discover Date</label>
+        <label>Last Account Discover Date</label>
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>DateTime</type>
@@ -167,10 +209,10 @@
     </fields>
     <fields>
         <fullName>Source_Object_Account_Id__c</fullName>
-        <description>Account Id field based on the Source Object.   Example: Source Object is Contact then the Account Id is AccountId because AccountId is the lookup on the contact that holds the Account Id value.</description>
+        <description>Relationship Path from Primary Object to Account Id (e.g., Primary Object = Account then path is Id, Primary Object = Contact then path is AccountId)</description>
         <externalId>false</externalId>
-        <inlineHelpText>Source Object Account Id Reference</inlineHelpText>
-        <label>Source Object Account Id</label>
+        <inlineHelpText>Relationship Path from Primary Object to Account Id (e.g., Primary Object = Account then path is Id, Primary Object = Contact then path is AccountId)</inlineHelpText>
+        <label>Relationship Path to Account Id</label>
         <length>128</length>
         <required>false</required>
         <trackTrending>false</trackTrending>
@@ -179,10 +221,10 @@
     </fields>
     <fields>
         <fullName>Source_Object_Contact_Id__c</fullName>
-        <description>Contact Id field based on the Source Object. Example: Source Object is Contact then the Id is Id because Id is the Salesforce Id on the contact that holds the Contact Id value.</description>
+        <description>Relationship Path from Primary Object to Contact Id (e.g., Primary Object = Account then path is Not Available because 1-to-Many Relationship, Primary Object = Contact then path is Id)</description>
         <externalId>false</externalId>
-        <inlineHelpText>Source Object Contact Id</inlineHelpText>
-        <label>Source Object Contact Id</label>
+        <inlineHelpText>Relationship Path from Primary Object to Contact Id (e.g., Primary Object = Account then path is Not Available because 1-to-Many Relationship, Primary Object = Contact then path is Id)</inlineHelpText>
+        <label>Relationship Path to Contact Id</label>
         <length>128</length>
         <required>false</required>
         <trackTrending>false</trackTrending>
@@ -191,10 +233,10 @@
     </fields>
     <fields>
         <fullName>Source_Object__c</fullName>
-        <description>Name of the source object to query when trying to find potential merge candidates (e.g., Contact, Account) based on the associated report for this merge rule.</description>
+        <description>Name of the primary object for the report used as the merge candidate criteria.</description>
         <externalId>false</externalId>
-        <inlineHelpText>Source object in the merge rule report</inlineHelpText>
-        <label>Source Object</label>
+        <inlineHelpText>Name of the primary object (e.g., Contact, Account) for the report used as the merge candidate criteria.</inlineHelpText>
+        <label>Report Primary Object</label>
         <length>80</length>
         <required>true</required>
         <trackTrending>false</trackTrending>
@@ -211,8 +253,10 @@
     </fields>
     <fields>
         <fullName>Source_Report__c</fullName>
+        <description>Report Unique Name used as the merge candidate criteria for this merge rule</description>
         <externalId>false</externalId>
-        <label>Source Report</label>
+        <inlineHelpText>Report Unique Name used as the merge candidate criteria for this merge rule</inlineHelpText>
+        <label>Report Unique Name</label>
         <length>80</length>
         <required>true</required>
         <trackTrending>false</trackTrending>
@@ -235,8 +279,10 @@
     </fields>
     <fields>
         <fullName>Total_Unassigned_Accounts__c</fullName>
+        <description>Total number of account merge candidate pairs.  Merge candidates are discovered in groups of 2 related accounts based on the report criteria.</description>
         <externalId>false</externalId>
-        <label>Total Unassigned Accounts</label>
+        <inlineHelpText>Total number of account merge candidate pairs.  Merge candidates are discovered in groups of 2 related accounts based on the report criteria.</inlineHelpText>
+        <label>Total Account Merge Candidate Pairs</label>
         <summaryFilterItems>
             <field>C501_Account_Merge__c.Merge_Action__c</field>
             <operation>equals</operation>
@@ -249,8 +295,10 @@
     </fields>
     <fields>
         <fullName>Total_Unassigned_Contacts__c</fullName>
+        <description>Total number of contact merge candidate pairs.  Merge candidates are discovered in groups of 2 related contacts based on the report criteria.</description>
         <externalId>false</externalId>
-        <label>Total Unassigned Contacts</label>
+        <inlineHelpText>Total number of contact merge candidate pairs.  Merge candidates are discovered in groups of 2 related contacts based on the report criteria.</inlineHelpText>
+        <label>Total Contact Merge Candidate Pairs</label>
         <summaryForeignKey>C501_Contact_Merge__c.Merge_Metric__c</summaryForeignKey>
         <summaryOperation>count</summaryOperation>
         <trackTrending>false</trackTrending>
@@ -262,7 +310,7 @@
         <externalId>false</externalId>
         <label>Unique Id</label>
         <length>64</length>
-        <required>true</required>
+        <required>false</required>
         <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>true</unique>
@@ -273,8 +321,6 @@
         <columns>NAME</columns>
         <columns>Total_Unassigned_Accounts__c</columns>
         <columns>Total_Unassigned_Contacts__c</columns>
-        <columns>Confidence__c</columns>
-        <columns>AutoMerge_Percentage__c</columns>
         <columns>AutoMerge_Objects__c</columns>
         <filterScope>Everything</filterScope>
         <label>All Metrics</label>
@@ -287,13 +333,10 @@
     <searchLayouts>
         <excludedStandardButtons>New</excludedStandardButtons>
         <excludedStandardButtons>OpenListInQuip</excludedStandardButtons>
-        <excludedStandardButtons>Accept</excludedStandardButtons>
+        <excludedStandardButtons>PrintableListView</excludedStandardButtons>
         <excludedStandardButtons>ChangeOwner</excludedStandardButtons>
         <excludedStandardButtons>MassChangeOwner</excludedStandardButtons>
-        <listViewButtons>C501_ListView_Discover</listViewButtons>
-        <listViewButtons>C501_ListView_Merge</listViewButtons>
-        <searchResultsCustomButtons>C501_ListView_Discover</searchResultsCustomButtons>
-        <searchResultsCustomButtons>C501_ListView_Merge</searchResultsCustomButtons>
+        <excludedStandardButtons>Accept</excludedStandardButtons>
     </searchLayouts>
     <sharingModel>ReadWrite</sharingModel>
     <visibility>Public</visibility>
@@ -313,10 +356,10 @@
         <availability>online</availability>
         <displayType>massActionButton</displayType>
         <linkType>page</linkType>
-        <masterLabel>Merge</masterLabel>
+        <masterLabel>Auto-Merge</masterLabel>
         <openType>replace</openType>
         <page>C501_MassMergeListViewMerge</page>
         <protected>false</protected>
         <requireRowSelection>true</requireRowSelection>
-    </webLinks>
+    </webLinks>    
 </CustomObject>
