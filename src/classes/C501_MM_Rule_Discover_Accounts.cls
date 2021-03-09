@@ -66,18 +66,51 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
         if (String.isBlank(strSoql)) {
             return;
         }
-        
+
         C501_MM_Rule_Discover_Accounts.get().ProcessMergeMetrics(strSoql);
     }
 
     public void execute(SchedulableContext SC) {
 
-        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
-        if (String.isBlank(strSoql)) {
+        // Main entry point for scheduled job that sequentially chains into the rest of the Batch calls.  Disable here will disable all discovery and merging from the scheduled job
+        Mass_Merge_Config__c massMergeConfigSettings = Mass_Merge_Config__c.getOrgDefaults();
+        if (massMergeConfigSettings <> null && massMergeConfigSettings.Disable_All_Services__c && !Test.isRunningTest()) {
             return;
         }
 
-        this.ProcessMergeMetrics(strSoql);
+        // Check if there is a backlog of Merge Queries - don't want to create more if wasn't able to process the previous Merge Queries
+        if (C501_MassMerge_SharedCode.GetCountMergeQueries(null) > 0) {
+
+            String strSoql = C501_MassMerge_SharedCode.GetMergeQueries();
+            if (String.isBlank(strSoql)) {
+                return;
+            }
+
+            C501_MM_Process_Merge_Queries_Batch batchMergeQueries = new C501_MM_Process_Merge_Queries_Batch();
+            batchMergeQueries.query = strSoql;
+            batchMergeQueries.start = Datetime.now();
+    
+            if (!Test.isRunningTest()) {
+                Database.executeBatch(batchMergeQueries);               
+            }
+
+        } else {
+
+            String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+            if (String.isBlank(strSoql)) {
+                return;
+            }
+    
+            Rule_Discover_Accounts_Batch batchDiscover = new Rule_Discover_Accounts_Batch();
+            batchDiscover.query = strSoql;
+            batchDiscover.start = DateTime.now();
+
+            if (!Test.isRunningTest()) {
+                Database.executeBatch(batchDiscover);
+            } else {
+                this.ProcessMergeMetrics(strSoql);
+            }
+        }
     }
 
     public void executeMetricById(Id mergeMetricId) {
@@ -149,16 +182,12 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
                 continue;
             }
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetric.Name + ' Last Account Discover Date (Before): ' + (mergeMetric.Last_Discover_Date__c == null ? 'null' : mergeMetric.Last_Discover_Date__c.format()));
-
             C501_Merge_Metric__c mergeMetricUpdate = new C501_Merge_Metric__c(
                 Id = mergeMetric.Id,
                 Name = mergeMetric.Name,
                 Last_Discover_Date__c = System.now(),
                 Unique_Id__c = reportId
             );
-
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetricUpdate.Name + ' Last Account Discover Date (After Set): ' + mergeMetricUpdate.Last_Discover_Date__c.format());
 
             Integer retriesRemaining = C501_MassMerge_SharedCode.MAX_RETRY_DATABASE;
             do {
@@ -174,9 +203,6 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
                     break;
                 }
             } while (retriesRemaining-- > 0);
-
-            mergeMetricUpdate = [SELECT Id, Name, Last_Discover_Date__c FROM C501_Merge_Metric__c WHERE Id = :mergeMetricUpdate.Id LIMIT 1];
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetricUpdate.Name + ' Last Account Discover Date (After Update): ' + mergeMetricUpdate.Last_Discover_Date__c.format());
 
             discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Account.name());
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {

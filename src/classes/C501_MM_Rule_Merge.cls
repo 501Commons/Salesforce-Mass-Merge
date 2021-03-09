@@ -54,7 +54,46 @@ public class C501_MM_Rule_Merge implements Schedulable {
     public void execute(SchedulableContext SC) {
 
         String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
-        this.ProcessMergeMetrics(strSoql);
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        // Handle Account Merging
+        //
+        if (C501_MassMerge_SharedCode.GetCountAccountMergeCandidates() > 0) {        
+        
+            if (!Test.isRunningTest()) {
+
+                Rule_Merge_Batch batchMerge = new Rule_Merge_Batch();
+                batchMerge.query = strSoql;
+                batchMerge.start = Datetime.now();
+                batchMerge.mergeCandidates = C501_MassMerge_SharedCode.GetCountMergeCandidates();
+                batchMerge.mergeCandidateRetries = 0;
+            
+                Database.executeBatch(batchMerge);
+            } else {
+
+                this.ProcessMergeMetrics(strSoql, true);
+            }
+        }
+
+        Mass_Merge_Config__c massMergeConfigSettings = Mass_Merge_Config__c.getOrgDefaults();
+        if (Test.isRunningTest() || (massMergeConfigSettings <> null && !massMergeConfigSettings.Batch_Contact_Merging__c)) {
+
+            // Handle Contact Merging
+            //
+            if (C501_MassMerge_SharedCode.GetCountContactMergeCandidates() > 0) {   
+
+                // Merge Contacts outside of the executeBatch because Contact merge throws a NPSP Exception due to Queueable Jobs limit when called in a Future or Batch
+                this.ProcessMergeMetrics(strSoql, false);
+            }
+        }
+    }
+
+    @future
+    public static void executeFuture() {
+
+        C501_MM_Rule_Merge.get().execute(null);
     }
 
     public void executeMetricById(Id mergeMetricId) {
@@ -67,14 +106,15 @@ public class C501_MM_Rule_Merge implements Schedulable {
         // Add in specific Id query
         strSoql += ' AND Id = \'' + mergeMetricId + '\'';
 
-        this.ProcessMergeMetrics(strSoql);
+        this.ProcessMergeMetrics(strSoql, true);
+        this.ProcessMergeMetrics(strSoql, false);
     }
 
     public void executeMetric(Id mergeMetricId) {
         this.executeMetricById(mergeMetricId);
     }
 
-    public void ProcessMergeMetrics(String strSoql) {
+    public void ProcessMergeMetrics(String strSoql, Boolean processAccountMerge) {
 
  		//
 		// Perform all SOQL Queries outside of loop to avoid Salesforce Governor Limits: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_gov_limits.htm
@@ -100,96 +140,120 @@ public class C501_MM_Rule_Merge implements Schedulable {
             WHERE Id in :sourceReportIds OR DeveloperName in :sourceReportIds];
 
         // Walk through Merge Metrics
-        List<C501_Merge_Metric__c> mergeMetricsUpdate = new List<C501_Merge_Metric__c>();
+        Map<String, C501_Merge_Metric__c> mergeMetricsUpdate = new Map<String, C501_Merge_Metric__c>();
 
-        Integer batchMergesScheduled = 0;
-        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
+        Boolean stopMerging = false;
+        do {
+            for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
-            if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
-                break;
-            }
+                if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                    stopMerging = true;
+                    break;                    
+                }
+                
+                Boolean reportChangeDetected = false;
+                Boolean reportFound = false;
+                for (Report report :reports) {
 
-            Boolean reportChangeDetected = false;
-            Boolean reportFound = false;
-            for (Report report :reports) {
+                    if ((String)report.Id == mergeMetric.Source_Report__c || report.DeveloperName == mergeMetric.Source_Report__c) {
 
-                if ((String)report.Id == mergeMetric.Source_Report__c || report.DeveloperName == mergeMetric.Source_Report__c) {
+                        reportFound = true;
 
-                    reportFound = true;
+                        // Check for report change
+                        if (report.LastModifiedDate <> null && (mergeMetric.Source_Report_LastModifiedDate__c == null || mergeMetric.Source_Report_LastModifiedDate__c <> report.LastModifiedDate)) {
 
-                    // Check for report change
-                    if (report.LastModifiedDate <> null && (mergeMetric.Source_Report_LastModifiedDate__c == null || mergeMetric.Source_Report_LastModifiedDate__c <> report.LastModifiedDate)) {
+                            reportChangeDetected = true;
+                            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
 
-                        reportChangeDetected = true;
-                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Change Detected - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id + ' Report: ' + report.DeveloperName + ' report.LastModifiedDate: ' + report.LastModifiedDate  + ' mergeMetric.Source_Report_LastModifiedDate__c: ' + mergeMetric.Source_Report_LastModifiedDate__c);
+                            mergeMetric.Source_Report_LastModifiedDate__c = report.LastModifiedDate;
+                            mergeMetric.Unique_Id__c = report.Id;
+                            if (mergeMetricsUpdate.containsKey(mergeMetric.Id)) {
+                                mergeMetricsUpdate.remove(mergeMetric.Id);
+                            }
 
-                        mergeMetric.Source_Report_LastModifiedDate__c = report.LastModifiedDate;
-                        mergeMetric.Unique_Id__c = report.Id;
-                        mergeMetricsUpdate.add(mergeMetric);
+                            mergeMetricsUpdate.put(mergeMetric.Id, mergeMetric);
+                        }
+
+                        break;
+                    }
+                }
+
+                if (reportChangeDetected || !reportFound) {
+
+                    if (!reportFound) {
+                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
                     }
 
+                    // Queue merge metric to delete children since report changed or report not found
+                    //
+
+                    String strSoqldeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+                    if (String.isBlank(strSoqldeleteAccountMerges)) {
+                        return;
+                    }
+                    strSoqldeleteAccountMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
+                    List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqldeleteAccountMerges);
+
+                    if (!deleteAccountMerges.isEmpty()) {
+                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
+                        Database.delete(deleteAccountMerges, false);
+                    }
+
+                    String strSoqldeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+                    if (String.isBlank(strSoqldeleteContactMerges)) {
+                        return;
+                    }
+                    strSoqldeleteContactMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
+
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
+                    List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqldeleteContactMerges);
+
+                    if (!deleteContactMerges.isEmpty()) {
+                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
+                        Database.delete(deleteContactMerges, false);
+                    }
+
+                    continue;
+                }
+
+                mergeMetric.Last_Merge_Date__c = System.now();
+
+                if (mergeMetricsUpdate.containsKey(mergeMetric.Id)) {
+                    mergeMetricsUpdate.remove(mergeMetric.Id);
+                }
+                mergeMetricsUpdate.put(mergeMetric.Id, mergeMetric);
+
+                if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
+                    
+                    stopMerging = true;
                     break;
                 }
+        
+                if (processAccountMerge) {
+                    C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
+                    Integer numberMerged = c501MassMerge_SharedCode_Account.ProcessObjectMergeCandidates(mergeMetric);
+
+                    if (Test.isRunningTest()) {
+                        stopMerging = true;
+                        break;
+                    }
+                } else {
+                    C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
+                    Integer numberMerged = c501MassMerge_SharedCode_Contact.ProcessObjectMergeCandidates(mergeMetric);
+
+                    if (Test.isRunningTest()) {
+                        stopMerging = true;
+                        break;
+                    }
+                }
             }
-
-            if (reportChangeDetected || !reportFound) {
-
-                if (!reportFound) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MM_Rule_Merge:ProcessMergeMetrics - Report Not Found - Merge Metric Name: ' + mergeMetric.Name + ' Id: ' + mergeMetric.Id);
-                }
-
-                // Queue merge metric to delete children since report changed or report not found
-                //
-
-                String strSoqldeleteAccountMerges = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-                if (String.isBlank(strSoqldeleteAccountMerges)) {
-                    return;
-                }
-                strSoqldeleteAccountMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
-
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteAccountMerges);
-                List<C501_Account_Merge__c> deleteAccountMerges = Database.query(strSoqldeleteAccountMerges);
-
-                if (!deleteAccountMerges.isEmpty()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Account Merges: ' + deleteAccountMerges);
-                    Database.delete(deleteAccountMerges, false);
-                }
-
-                String strSoqldeleteContactMerges = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-                if (String.isBlank(strSoqldeleteContactMerges)) {
-                    return;
-                }
-                strSoqldeleteContactMerges += ' AND Merge_Metric__c = \'' + mergeMetric.Id + '\'';
-
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics strSoql: ' + strSoqldeleteContactMerges);
-                List<C501_Contact_Merge__c> deleteContactMerges = Database.query(strSoqldeleteContactMerges);
-
-                if (!deleteContactMerges.isEmpty()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Delete Contact Merges: ' + deleteContactMerges);
-                    Database.delete(deleteContactMerges, false);
-                }
-
-                continue;
-            }
-
-            mergeMetric.Last_Merge_Date__c = System.now();
-            mergeMetricsUpdate.add(mergeMetric);
-
-            C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
-            Boolean sequentialMergeRun = c501MassMerge_SharedCode_Account.ProcessObjectMergeCandidates(mergeMetric) > 0 ? true : false;
-
-            C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-            batchMergesScheduled += c501MassMerge_SharedCode_Contact.ProcessObjectMergeCandidates(mergeMetric);
-
-            // Check for any account merges which are currently sequential due to a Future call when merging.  Contact merges use Batch so are nonsequential
-            if (sequentialMergeRun) {
-                break;
-            }
-        }
-
-        if (!mergeMetricsUpdate.isEmpty()) {
-            Database.SaveResult[] updateResults = Database.update(mergeMetricsUpdate, false);
+        } while (!stopMerging && !C501_MassMerge_SharedCode.NearSalesforceLimits());
+        
+        if (!mergeMetricsUpdate.values().isEmpty()) {
+            Database.SaveResult[] updateResults = Database.update(mergeMetricsUpdate.values(), false);
             for (Database.SaveResult updateResult :updateResults) {
                 if (!updateResult.isSuccess()) {
                     for(Database.Error resultError : updateResult.getErrors()) {
@@ -197,6 +261,10 @@ public class C501_MM_Rule_Merge implements Schedulable {
                     }                        
                 }
             }
+        }
+
+        if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out on processing');
         }
 
         // Flush all Debug Logs to the Database

@@ -4,6 +4,26 @@
     <description>Mass Merge Config Settings</description>
     <enableFeeds>false</enableFeeds>
     <fields>
+        <fullName>Batch_Contact_Merging__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>Batch Contact merging for faster merging of contact records.  Uncheck this option if contacts are not merging or errors in the contact merging process.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Batch Contact merging for faster merging of contact records.  Uncheck this option if contacts are not merging or errors in the contact merging process.</inlineHelpText>
+        <label>Batch Contact Merging</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Disable_All_Services__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>Disable All Services when checked will disable discovery and merging.  Typically only used for debugging deployments.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Disable All Services when checked will disable discovery and merging.  Typically only used for debugging deployments.</inlineHelpText>
+        <label>Disable All Services</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
         <fullName>Enable_Debug_Logging__c</fullName>
         <defaultValue>false</defaultValue>
         <description>Enable Debug Logging to write debug level messages to the log table</description>
@@ -34,6 +54,44 @@
         <trackTrending>false</trackTrending>
         <type>Text</type>
         <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Maximum_Discover_Having_Count__c</fullName>
+        <defaultValue>25</defaultValue>
+        <description>Maximum value to use in a having count to find duplicates.  Will only find duplicates up to the max value.  If the value is 20 then won&apos;t find any specific duplicate matches of 21 or more.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Maximum value to use in a having count to find duplicates.  Will only find duplicates up to the max value.  If the value is 20 then won&apos;t find any specific duplicate matches of 21 or more.</inlineHelpText>
+        <label>Maximum Discover Having Count</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Maximum_Salesforce_Limits_to_Use__c</fullName>
+        <defaultValue>65</defaultValue>
+        <description>Maximum percentage of Salesforce Limits (e.g., SOQL Queries, CPU Time) to use for a given execution cycle.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Maximum percentage of Salesforce Limits (e.g., SOQL Queries, CPU Time) to use for a given execution cycle.</inlineHelpText>
+        <label>Maximum % Salesforce Limits to Use</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Merge_History_Write_All__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>When true write all merge fields into merge history otherwise write only fields ignored on the duplicate record.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>When true write all merge fields into merge history otherwise write only fields ignored on the duplicate record.</inlineHelpText>
+        <label>Merge History Write All</label>
+        <trackTrending>false</trackTrending>
+        <type>Checkbox</type>
     </fields>
     <label>Mass Merge Config</label>
     <visibility>Public</visibility>

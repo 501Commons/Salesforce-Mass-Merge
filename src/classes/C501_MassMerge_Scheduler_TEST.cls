@@ -72,5 +72,111 @@ class C501_MassMerge_Scheduler_TEST {
 
         //System.assert(
         //    100.0 == Database.query(strSoql).Merge_Confidence__c);
-   }
+    }
+
+    @isTest(SeeAllData='true')
+    public static void C501_MassMerge_Batch_DiscoverAccount_Test() {
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        Rule_Discover_Accounts_Batch batchDiscover = new Rule_Discover_Accounts_Batch();
+        batchDiscover.query = strSoql;
+        batchDiscover.start = Datetime.now();
+    
+        Test.startTest();
+
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Account Test');
+        
+        Database.executeBatch(batchDiscover);
+
+        Test.stopTest();
+    }   
+
+    @isTest(SeeAllData='true')
+    public static void C501_MassMerge_Batch_DiscoverContactsAccount_Test() {
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        Rule_Discover_ContactsAccount_Batch batchDiscover = new Rule_Discover_ContactsAccount_Batch();
+        batchDiscover.query = strSoql;
+        batchDiscover.start = Datetime.now();
+    
+        Test.startTest();
+
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+        
+        Database.executeBatch(batchDiscover);
+
+        Test.stopTest();
+    }   
+
+    @isTest(SeeAllData='true')
+    public static void C501_MassMerge_Batch_DiscoverContactsAccounts_Test() {
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        Rule_Discover_ContactsAccounts_Batch batchDiscover = new Rule_Discover_ContactsAccounts_Batch();
+        batchDiscover.query = strSoql;
+        batchDiscover.start = Datetime.now();
+
+        Test.startTest();
+        
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+
+        Database.executeBatch(batchDiscover);
+
+        Test.stopTest();
+    }   
+    
+    @isTest(SeeAllData='true')
+    public static void C501_MassMerge_Batch_MergeQueries_Test() {
+
+        String strSoql = C501_MassMerge_SharedCode.GetMergeQueries();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        C501_MM_Process_Merge_Queries_Batch batchMergeQueries = new C501_MM_Process_Merge_Queries_Batch();
+        batchMergeQueries.query = strSoql;
+        batchMergeQueries.start = Datetime.now();
+
+        Test.startTest();
+        
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+
+        Database.executeBatch(batchMergeQueries);
+
+        Test.stopTest();
+    }   
+    
+    @isTest(SeeAllData='true')
+    public static void C501_MassMerge_Batch_Merge_Test() {
+
+        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+
+        Rule_Merge_Batch batchMerge = new Rule_Merge_Batch();
+        batchMerge.query = strSoql;
+        batchMerge.start = Datetime.now();
+        batchMerge.mergeCandidates = C501_MassMerge_SharedCode.GetCountMergeCandidates();
+
+        Test.startTest();
+        
+        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
+
+        Database.executeBatch(batchMerge);
+
+        Test.stopTest();
+    }   
 }

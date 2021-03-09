@@ -1,4 +1,4 @@
-/*
+<!-- 
     Copyright (c) 2019, 501Commons.org
     All rights reserved.
     
@@ -26,27 +26,7 @@
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
     ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
     POSSIBILITY OF SUCH DAMAGE.
-*/
+-->  
 
-public without sharing class C501_MM_ListView_Controller {
-
-    public C501_MM_ListView_Controller(ApexPages.StandardSetController controller) {
-    }
-
-    public PageReference discoverTrigger() {
-
-        C501_MM_Rule_Discover_Accounts.executeFuture();
-        C501_MM_Rule_Discover_ContactsAccount.executeFuture();
-        C501_MM_Rule_Discover_ContactsAccounts.executeFuture();
-        C501_MM_Process_Merge_Queries.executeFuture();
-
-        return new ApexPages.Action('{!List}').invoke();
-    }
-
-    public PageReference mergeTrigger() {
-
-        C501_MM_Rule_Merge.get().execute(null);
-
-        return new ApexPages.Action('{!List}').invoke();
-    }
-}
+<apex:page standardController="C501_Merge_Metric__c" recordSetVar="metrics" extensions="C501_MM_ListView_Controller" action="{!discoverTrigger}">
+</apex:page>

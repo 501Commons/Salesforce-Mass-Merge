@@ -538,7 +538,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                         }                        
                     }
                 }
-                c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), listContactsMergesMaster.values(), true);
+                c501MassMerge_SharedCode_Contact.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), listContactsMergesMaster.values());
             }
 
             strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
@@ -554,6 +554,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             C501_MM_Rule_Discover_Accounts.executeFuture();
             C501_MM_Rule_Discover_ContactsAccount.executeFuture();
             C501_MM_Rule_Discover_ContactsAccounts.executeFuture();
+            C501_MM_Process_Merge_Queries.executeFuture();
 
             C501_MassMerge_SharedCode.OutputDebugLogFlush();
 

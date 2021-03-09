@@ -142,43 +142,23 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         // Get Contacts using the Contact_c field
         //
         String strSoqlSelect = 'SELECT Contact__c, Contact__r.Name';
-        String strSoqlGroupBy = ' GROUP BY Contact__c, Contact__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql1: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit);
-        for (AggregateResult result : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit)) {
-
-            // Attempt to get based on Namespace
-            String objectFieldValue;
-            try {
-                objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Contact__c').toString();
-            }
-            catch (System.SObjectException objectException) {
-                objectFieldValue = result.get('Contact__c').toString();
-            }
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql1: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
+        for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
 
             mapSelectOption.put(
-                objectFieldValue,
-                new SelectOption(objectFieldValue, result.get('Name').toString()));
+                mergeRecord.Contact__c,
+                new SelectOption(mergeRecord.Contact__c, mergeRecord.Contact__r.Name));
         }
 
         // Get Contacts using the Merge_Target_Contact_c field
         //
         strSoqlSelect = 'SELECT Merge_Target_Contact__c, Merge_Target_Contact__r.Name';
-        strSoqlGroupBy = ' GROUP BY Merge_Target_Contact__c, Merge_Target_Contact__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql2: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit);
-        for (AggregateResult result : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlGroupBy + strSoqlLimit)) {
-
-            // Attempt to get based on Namespace
-            String objectFieldValue;
-            try {
-                objectFieldValue = result.get(C501_MassMerge_SharedCode.CurrentNamespace + 'Merge_Target_Contact__c').toString();
-            }
-            catch (System.SObjectException objectException) {
-                objectFieldValue = result.get('Merge_Target_Contact__c').toString();
-            }
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql2: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
+        for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
 
             mapSelectOption.put(
-                objectFieldValue,
-                new SelectOption(objectFieldValue, result.get('Name').toString()));
+                mergeRecord.Merge_Target_Contact__c,
+                new SelectOption(mergeRecord.Merge_Target_Contact__c, mergeRecord.Merge_Target_Contact__r.Name));
         }
 
         List<SelectOption> listSOSorted = new List<SelectOption>();
@@ -187,7 +167,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         return listSOSorted;
     }
 
-    public void InsertObjectMergeCandidates(C501_Merge_Metric__c mergeMetric, List<C501_Contact_Merge__c> mergeObjects) {
+    public void InsertObjectMergeCandidates(List<C501_Contact_Merge__c> mergeObjects) {
 
         if (mergeObjects == null || mergeObjects.isEmpty()) {
             return;
@@ -197,8 +177,6 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 		// Perform all DML (Data Manipulation Language) calls (insert, update, merge, delete, restore) outside of loop to avoid Salesforce Governor Limits: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_gov_limits.htm
         //
 
-        String mergeMetricName = mergeMetric.Name;
-
         Set<String> mergeObjectsExisting = new Set<String>();
         List<C501_Contact_Merge__c> deleteContactMerges = new List<C501_Contact_Merge__c>();
 
@@ -206,7 +184,6 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         if (String.isBlank(strSoql)) {
             return;
         }
-        strSoql += ' AND Merge_Metric__r.Name = \'' + mergeMetricName + '\'';
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
 
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::InsertObjectMergeCandidates strSoql: ' + strSoql);
@@ -288,7 +265,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMergeCandidates strSoql: ' + strSoql);
 
-        for(C501_Contact_Merge__c mergeObject : Database.Query(strSoql)) {
+        for (C501_Contact_Merge__c mergeObject : Database.Query(strSoql)) {
 
             if (mergeObject.Contact__c == null || mergeObject.Merge_Target_Contact__c == null ||
                 mergeObject.Contact__r.IsDeleted || mergeObject.Merge_Target_Contact__r.IsDeleted) {
@@ -316,7 +293,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         // Check for batch queued merges
         if (!pendingMerges.isEmpty()) {
 
-            return this.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingMerges, false);
+            return this.ProcessObjectMerges(new List<C501_Merge_Metric__c> {mergeMetric}, pendingMerges);
         }
 
         // Check if AutoMerge Enabled
@@ -328,14 +305,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
     }
 
     // Legacy Method for Managed Package
-    public Integer ProcessObjectMerges(List<C501_Contact_Merge__c> objectMerges, Boolean batchMerge)
+    public Integer ProcessObjectMerges(List<C501_Contact_Merge__c> objectMerges)
     {
-        return this.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), objectMerges, batchMerge);
+        return this.ProcessObjectMerges(new List<C501_Merge_Metric__c>(), objectMerges);
     }
 
-    public Integer ProcessObjectMerges(List<C501_Merge_Metric__c> mergeMetrics, List<C501_Contact_Merge__c> objectMerges, Boolean batchMerge)
+    public Integer ProcessObjectMerges(List<C501_Merge_Metric__c> mergeMetrics, List<C501_Contact_Merge__c> objectMerges)
     {
-
         // Jobs with Status = 'Holding' applies to batch jobs in the Apex flex queue (max allowed 100)
         //  https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/api/sforce_api_objects_asyncapexjob.htm
         List<AsyncApexJob> flexQueueJobs = [SELECT Id FROM AsyncApexJob WHERE Status = 'Holding'];
@@ -343,9 +319,9 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ProcessObjectMerges - QueuableJobs ' + Limits.getQueueableJobs() + ' of ' + Limits.getLimitQueueableJobs());
         Integer remainingFlexQueueJobs = Limits.getLimitQueueableJobs() - flexQueueJobs.size();
 
-        Map<String, Decimal> mergeMetricMap = new Map<String, Decimal>();
+        Set<String> mergeMetricSet = new Set<String>();
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
-            mergeMetricMap.put(mergeMetric.Id, mergeMetric.AutoMerge_Percentage__c);
+            mergeMetricSet.add(mergeMetric.Id);
         }
 
         Integer numberObjectMerges = 0;
@@ -374,10 +350,11 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 continue;
             }
 
-            // Check Automerge Percentage
-            if (!mergeMetricMap.containsKey(mergeCandidate.Merge_Metric__c)) {
+            if (!mergeMetricSet.contains(mergeCandidate.Merge_Metric__c)) {
+
                 String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
                 if (String.isBlank(strSoql)) {
+
                     return numberObjectMerges;
                 }
 
@@ -386,75 +363,42 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 mergeMetrics = Database.Query(strSoql);
 
                 for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
-                    mergeMetricMap.put(mergeMetric.Id, mergeMetric.AutoMerge_Percentage__c);
+                    mergeMetricSet.add(mergeMetric.Id);
                 }
 
-                if (!mergeMetricMap.containsKey(mergeCandidate.Merge_Metric__c)) {
+                if (!mergeMetricSet.contains(mergeCandidate.Merge_Metric__c)) {
                     throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Data Error - Invalid Merge Metric: ' + mergeCandidate.Merge_Metric__c + ' on Contact Merge Id: ' + mergeCandidate.Id);
                 }
             }
             
-            // Check to merge if Merge Confidence is greater than or equal to AutoMerge Confidence
-            //      No Merge:   Merge Confidence 50%, AutoMerge Confidence 90%
-            //      No Merge:   Merge Confidence 90%, AutoMerge Confidence 100%
-            //      Merge:      Merge Confidence 90%, AutoMerge Confidence 0%
-            //      Merge:      Merge Confidence 90%, AutoMerge Confidence 90%
-            //      Merge:      Merge Confidence 90%, AutoMerge Confidence 80%
-            if (mergeCandidate.Merge_Confidence__c < mergeMetricMap.get(mergeCandidate.Merge_Metric__c)) {
-                continue;
-            }
-
             objectsProcessed.add(mergeCandidate.Contact__c);
             objectsProcessed.add(mergeCandidate.Merge_Target_Contact__c);
 
-            if (batchMerge) {
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges BatchMerge');
+            ObjectsMerge( 
+                new Contact(
+                    Id = mergeCandidate.Contact__c
+                ),
+                new List<Contact> { new Contact(
+                    Id = mergeCandidate.Merge_Target_Contact__c
+                )
+            } );
 
-                if (remainingFlexQueueJobs-- <= 0) {
-                    break;
-                }
+            numberObjectMerges++;
 
-                // NPSP - Not supported - throws error in Future call.  Check back if Salesforce fixes issue
-                // https://github.com/SalesforceFoundation/Cumulus/issues/4178                
-
-                // Schedule Batch Job in Flex Queue (can schedule up to 100 jobs)
-                C501_MassMerge_Batch batchMergeRequest = new C501_MassMerge_Batch();
-                batchMergeRequest.query = 'SELECT Id, Contact__c, Merge_Target_Contact__c FROM C501_Contact_Merge__c WHERE Id = \'' + mergeCandidate.Id + '\'';
-                batchMergeRequest.ContactMerge = true;
-                Database.executeBatch(batchMergeRequest);
-
-                numberObjectMerges++; 
-            }
-            else {
-
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges ObjectsMerge');
-
-                ObjectsMerge( 
-                    new Contact(
-                        Id = mergeCandidate.Contact__c
-                    ),
-                    new List<Contact> { new Contact(
-                        Id = mergeCandidate.Merge_Target_Contact__c
-                    )
-                } );
-
-                // Limit 1 non-batch merge at a time to avoid any governor limit issues
-                numberObjectMerges++;
-
-                break;
-            }
+            break;
         }
 
         if (!deleteContactMerges.isEmpty()) {
-           C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Contact Merges: ' + deleteContactMerges);
             Database.delete(deleteContactMerges, false);
         }
 
         return numberObjectMerges;
     }
 
-    private void BackfillBlankFields(SObject updateRecord, Set<String> blankFields, List<String> availableFieldValues) {
+    private void BackfillBlankFields(Contact updateRecord, Set<String> blankFields, List<String> availableFieldValues) {
 
         for (String fieldName :blankFields) {
 
@@ -534,7 +478,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                 // If the field is type lookup, then ignore in the merge fields because is handled during the object merge
                 string relName = fResult.getRelationshipName();
-                if (string.isBlank(relName)) {
+                if (String.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
                     //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
@@ -548,11 +492,12 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             }
         }
 
-        strSoql += ' Id from Contact where Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeCandidates);
+        strSoql += ' Id FROM Contact WHERE Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeCandidates);
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
         
         List<Contact> objectList;
         try {
+
             objectList = Database.query(strSoql); // Query the records
 
             // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
@@ -563,10 +508,27 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 return;
             }
 
+            // Get the Master Query Object
+            Contact masterObjectQuery = null;
+            for (Integer objectIndex = 0; objectIndex < objectList.size(); objectIndex++) {
+                if (objectList[objectIndex].Id == masterObject.Id) {
+
+                    masterObjectQuery = objectList[objectIndex];
+                    break;
+                }
+            }
+
+            // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
+            if (masterObjectQuery == null) {
+
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to find the master record fields');
+
+                return;
+            }
+
             List<C501_Merge_Contact_History__c> insertMergeHistories = new List<C501_Merge_Contact_History__c>();
 
             // Merge fields into master
-            SObject masterRecord = null;
             Set<String> masterUsedEmailValues = new Set<String>();
             Set<String> masterBlankEmailFields = new Set<String>();
             List<String> availableEmailValues = new List<String>();
@@ -576,12 +538,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             Set<String> addressTypesSkip = new Set<String>();
 
             // Assign Master Record
-            for (SObject objectItem :objectList) {
+            for (Contact objectItem :objectList) {
 
                 // Check to assign master object
-                if (masterObject.Id == objectItem.get('Id')) {
-
-                    masterRecord = objectItem;
+                if (masterObjectQuery.Id == objectItem.get('Id')) {
 
                     // Check Address
                     //
@@ -591,8 +551,8 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - check address field: ' + addressType + addressField);
 
                             try {
-                                if (masterRecord.get(addressType + addressField) != null &&
-                                    !String.isBlank(String.valueOf(masterRecord.get(addressType + addressField)))) {
+                                if (masterObjectQuery.get(addressType + addressField) != null &&
+                                    !String.isBlank(String.valueOf(masterObjectQuery.get(addressType + addressField)))) {
 
                                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
 
@@ -614,22 +574,25 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
 
-            if (masterRecord == null) {
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Unable to Query Master Object -  masterObject: ' + masterObject);
-                throw new C501_MassMerge_SharedCode_ContactException('Contact Merge Unable to find Master Object - ' + String.valueOf(masterObject));
-            }
+            Mass_Merge_Config__c massMergeConfigSettings = Mass_Merge_Config__c.getOrgDefaults();
+            Boolean writeAllMergeHistoryFields = massMergeConfigSettings == null ? false : massMergeConfigSettings.Merge_History_Write_All__c;
+    
+            for (Contact objectItem :objectList) {
 
-            for (SObject objectItem :objectList) {
-
-                // Check to assign master object
-                if (masterRecord.Id == objectItem.get('Id')) {
+                // Ignore Master Object
+                if (masterObjectQuery.Id == objectItem.get('Id')) {
                     continue;
                 }
 
+                String mergeActionIgnore = 'Ignore Duplicate';
+                String mergeActionUse = 'Use Duplicate';
+                String mergeActionError = 'Error';
+
                 for (String fieldName :fieldMap.keySet()) {
 
+                    String mergeAction = mergeActionIgnore;
                     Boolean skipMasterFieldUpdate = false;
-                    String masterFieldValue = String.valueOf(masterRecord.get(fieldName));
+                    String masterFieldValue = String.valueOf(masterObjectQuery.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
 
                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
@@ -670,10 +633,14 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                         if (String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue)) {
 
+                            writeHistoryRecord = writeAllMergeHistoryFields;
+
                             try{
-                                masterRecord.put(fieldName, objectItem.get(fieldName));
+                                masterObjectQuery.put(fieldName, objectItem.get(fieldName));
+                                mergeAction = mergeActionUse;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+                                mergeAction = mergeActionError;
                             }
                         }
                         else if (!String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
@@ -683,10 +650,11 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
                     if (writeHistoryRecord) {
                         insertMergeHistories.add(new C501_Merge_Contact_History__c(
-                            Contact__c = masterRecord.Id,
+                            Contact__c = masterObjectQuery.Id,
                             Merge_Value__c = String.isBlank(masterFieldValue) ? '(blank)' : masterFieldValue,
                             Ignore_Value__c = String.isBlank(duplicateFieldValue) ? '(blank)' : duplicateFieldValue,
-                            Field__c =  fieldName
+                            Field__c =  fieldName,
+                            Action__c = mergeAction
                         ));
                     }
                 }
@@ -694,13 +662,13 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
 
             // Check to backfill emails
             //
-            this.BackfillBlankFields(masterRecord, masterBlankEmailFields, availableEmailValues);
+            this.BackfillBlankFields(masterObjectQuery, masterBlankEmailFields, availableEmailValues);
 
             // Check to backfill phones
             //
-            this.BackfillBlankFields(masterRecord, masterBlankPhoneFields, availablePhoneValues);
+            this.BackfillBlankFields(masterObjectQuery, masterBlankPhoneFields, availablePhoneValues);
 
-            Database.SaveResult updateResult = Database.update((Contact)masterRecord, false);
+            Database.SaveResult updateResult = Database.update(masterObjectQuery, false);
             if (!updateResult.isSuccess()) {
                 for (Database.Error resultError : updateResult.getErrors()) {
                     C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsFieldMerge');

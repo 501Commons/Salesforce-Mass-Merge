@@ -71,14 +71,14 @@
                     <label>Account</label>
                 </value>
                 <value>
-                    <fullName>Contacts Within Account</fullName>
+                    <fullName>Contacts_Within_Account</fullName>
                     <default>false</default>
-                    <label>Contacts Within Account</label>
+                    <label>Contacts_Within_Account</label>
                 </value>
                 <value>
-                    <fullName>Contacts Across Accounts</fullName>
+                    <fullName>Contacts_Across_Accounts</fullName>
                     <default>false</default>
-                    <label>Contacts Across Accounts</label>
+                    <label>Contacts_Across_Accounts</label>
                 </value>
             </valueSetDefinition>
         </valueSet>
@@ -128,6 +128,38 @@
         <label>Auto-Merge Object(s) Discovery Only</label>
         <trackTrending>false</trackTrending>
         <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Discovery_Objects__c</fullName>
+        <description>List of objects to look for during discovery.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>List of objects to look for during discovery.</inlineHelpText>
+        <label>Discovery Object(s)</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>MultiselectPicklist</type>
+        <valueSet>
+            <restricted>true</restricted>
+            <valueSetDefinition>
+                <sorted>false</sorted>
+                <value>
+                    <fullName>Account</fullName>
+                    <default>false</default>
+                    <label>Account</label>
+                </value>
+                <value>
+                    <fullName>Contacts_Within_Account</fullName>
+                    <default>false</default>
+                    <label>Contacts_Within_Account</label>
+                </value>
+                <value>
+                    <fullName>Contacts_Across_Accounts</fullName>
+                    <default>false</default>
+                    <label>Contacts_Across_Accounts</label>
+                </value>
+            </valueSetDefinition>
+        </valueSet>
+        <visibleLines>3</visibleLines>
     </fields>
     <fields>
         <fullName>Enable_Account_Merge_Discovery__c</fullName>
@@ -190,6 +222,17 @@
         <required>false</required>
         <trackTrending>false</trackTrending>
         <type>DateTime</type>
+    </fields>
+    <fields>
+        <fullName>Last_ContactsAcross_Discover_HavingCount__c</fullName>
+        <externalId>false</externalId>
+        <label>Last ContactsAcross Discover HavingCount</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
     </fields>
     <fields>
         <fullName>Last_Discover_Date__c</fullName>
@@ -285,8 +328,8 @@
         <label>Total Account Merge Candidate Pairs</label>
         <summaryFilterItems>
             <field>C501_Account_Merge__c.Merge_Action__c</field>
-            <operation>equals</operation>
-            <value></value>
+            <operation>notEqual</operation>
+            <value>Ignore</value>
         </summaryFilterItems>
         <summaryForeignKey>C501_Account_Merge__c.Merge_Metric__c</summaryForeignKey>
         <summaryOperation>count</summaryOperation>
@@ -299,6 +342,11 @@
         <externalId>false</externalId>
         <inlineHelpText>Total number of contact merge candidate pairs.  Merge candidates are discovered in groups of 2 related contacts based on the report criteria.</inlineHelpText>
         <label>Total Contact Merge Candidate Pairs</label>
+        <summaryFilterItems>
+            <field>C501_Contact_Merge__c.Merge_Action__c</field>
+            <operation>notEqual</operation>
+            <value>Ignore</value>
+        </summaryFilterItems>
         <summaryForeignKey>C501_Contact_Merge__c.Merge_Metric__c</summaryForeignKey>
         <summaryOperation>count</summaryOperation>
         <trackTrending>false</trackTrending>
@@ -321,6 +369,8 @@
         <columns>NAME</columns>
         <columns>Total_Unassigned_Accounts__c</columns>
         <columns>Total_Unassigned_Contacts__c</columns>
+        <columns>Total_Ignore__c</columns>
+        <columns>Discovery_Objects__c</columns>
         <columns>AutoMerge_Objects__c</columns>
         <filterScope>Everything</filterScope>
         <label>All Metrics</label>
@@ -333,10 +383,17 @@
     <searchLayouts>
         <excludedStandardButtons>New</excludedStandardButtons>
         <excludedStandardButtons>OpenListInQuip</excludedStandardButtons>
-        <excludedStandardButtons>PrintableListView</excludedStandardButtons>
+        <excludedStandardButtons>Accept</excludedStandardButtons>
         <excludedStandardButtons>ChangeOwner</excludedStandardButtons>
         <excludedStandardButtons>MassChangeOwner</excludedStandardButtons>
-        <excludedStandardButtons>Accept</excludedStandardButtons>
+        <excludedStandardButtons>IsotopeSubscription</excludedStandardButtons>
+        <excludedStandardButtons>PrintableListView</excludedStandardButtons>
+        <listViewButtons>C501_ListView_Discover</listViewButtons>
+        <listViewButtons>C501_ListView_DiscoverContacts</listViewButtons>
+        <listViewButtons>C501_ListView_Merge</listViewButtons>
+        <searchResultsCustomButtons>C501_ListView_Discover</searchResultsCustomButtons>
+        <searchResultsCustomButtons>C501_ListView_DiscoverContacts</searchResultsCustomButtons>
+        <searchResultsCustomButtons>C501_ListView_Merge</searchResultsCustomButtons>
     </searchLayouts>
     <sharingModel>ReadWrite</sharingModel>
     <visibility>Public</visibility>
@@ -352,6 +409,17 @@
         <requireRowSelection>true</requireRowSelection>
     </webLinks>
     <webLinks>
+        <fullName>C501_ListView_DiscoverContacts</fullName>
+        <availability>online</availability>
+        <displayType>massActionButton</displayType>
+        <linkType>page</linkType>
+        <masterLabel>Discover Contacts</masterLabel>
+        <openType>replace</openType>
+        <page>C501_MassMergeListViewContacts</page>
+        <protected>false</protected>
+        <requireRowSelection>true</requireRowSelection>
+    </webLinks>
+    <webLinks>
         <fullName>C501_ListView_Merge</fullName>
         <availability>online</availability>
         <displayType>massActionButton</displayType>
@@ -361,5 +429,5 @@
         <page>C501_MassMergeListViewMerge</page>
         <protected>false</protected>
         <requireRowSelection>true</requireRowSelection>
-    </webLinks>    
+    </webLinks>
 </CustomObject>

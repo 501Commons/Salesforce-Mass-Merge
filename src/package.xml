@@ -10,12 +10,15 @@
         <members>C501_MM_Action_Controller_TEST</members>
         <members>C501_MM_ListView_Controller</members>
         <members>C501_MM_ListView_Controller_TEST</members>
+        <members>C501_MM_Process_Merge_Queries</members>
+        <members>C501_MM_Process_Merge_Queries_Batch</members>
         <members>C501_MM_Rule_Discover</members>
         <members>C501_MM_Rule_Discover_Accounts</members>
         <members>C501_MM_Rule_Discover_ContactsAccount</members>
         <members>C501_MM_Rule_Discover_ContactsAccounts</members>
         <members>C501_MM_Rule_Merge</members>
         <members>C501_MassMerge_Batch</members>
+        <members>C501_MassMerge_CodeCoverage</members>
         <members>C501_MassMerge_Fx_AllContactsMatch</members>
         <members>C501_MassMerge_Fx_Base</members>
         <members>C501_MassMerge_Fx_PartialMatch</members>
@@ -26,6 +29,10 @@
         <members>C501_MassMerge_SharedCode_Object</members>
         <members>C501_MassMerge_SharedCode_TEST</members>
         <members>C501_UTIL_PageMessages_CTRL</members>
+        <members>Rule_Discover_Accounts_Batch</members>
+        <members>Rule_Discover_ContactsAccount_Batch</members>
+        <members>Rule_Discover_ContactsAccounts_Batch</members>
+        <members>Rule_Merge_Batch</members>
         <name>ApexClass</name>
     </types>
     <types>
@@ -37,6 +44,7 @@
         <members>C501_MassMergeAccounts</members>
         <members>C501_MassMergeContacts</members>
         <members>C501_MassMergeListView</members>
+        <members>C501_MassMergeListViewContacts</members>
         <members>C501_MassMergeListViewMerge</members>
         <name>ApexPage</name>
     </types>
@@ -86,10 +94,12 @@
         <members>C501_Debug_Log__c.Debug_Text__c</members>
         <members>C501_Debug_Log__c.Log_Level__c</members>
         <members>C501_Merge_Account_History__c.Account__c</members>
+        <members>C501_Merge_Account_History__c.Action__c</members>
         <members>C501_Merge_Account_History__c.Field__c</members>
         <members>C501_Merge_Account_History__c.Ignore_Value__c</members>
         <members>C501_Merge_Account_History__c.Merge_Value__c</members>
         <members>C501_Merge_Account_History__c.User__c</members>
+        <members>C501_Merge_Contact_History__c.Action__c</members>
         <members>C501_Merge_Contact_History__c.Contact__c</members>
         <members>C501_Merge_Contact_History__c.Field__c</members>
         <members>C501_Merge_Contact_History__c.Ignore_Value__c</members>
@@ -100,12 +110,14 @@
         <members>C501_Merge_Metric__c.Confidence__c</members>
         <members>C501_Merge_Metric__c.Description__c</members>
         <members>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</members>
+        <members>C501_Merge_Metric__c.Discovery_Objects__c</members>
         <members>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Last_Account_Discover_GroupByHavingCount__c</members>
         <members>C501_Merge_Metric__c.Last_Contact_Discover_GroupByHavingCount__c</members>
         <members>C501_Merge_Metric__c.Last_ContactsAccount_Discover_Date__c</members>
         <members>C501_Merge_Metric__c.Last_ContactsAccounts_Discover_Date__c</members>
+        <members>C501_Merge_Metric__c.Last_ContactsAcross_Discover_HavingCount__c</members>
         <members>C501_Merge_Metric__c.Last_Discover_Date__c</members>
         <members>C501_Merge_Metric__c.Last_Merge_Date__c</members>
         <members>C501_Merge_Metric__c.Source_Object_Account_Id__c</members>
@@ -131,9 +143,22 @@
         <members>Contact.C501_Merge_Target__c</members>
         <members>Contact.C501_Other_Address__c</members>
         <members>Contact.Gender__c</members>
+        <members>Mass_Merge_Config__c.Batch_Contact_Merging__c</members>
+        <members>Mass_Merge_Config__c.Disable_All_Services__c</members>
         <members>Mass_Merge_Config__c.Enable_Debug_Logging__c</members>
         <members>Mass_Merge_Config__c.Enable_Error_Logging__c</members>
         <members>Mass_Merge_Config__c.Log_Filter__c</members>
+        <members>Mass_Merge_Config__c.Maximum_Discover_Having_Count__c</members>
+        <members>Mass_Merge_Config__c.Maximum_Salesforce_Limits_to_Use__c</members>
+        <members>Mass_Merge_Config__c.Merge_History_Write_All__c</members>
+        <members>Merge_Query__c.IsTest__c</members>
+        <members>Merge_Query__c.Merge_Criteria_Values__c</members>
+        <members>Merge_Query__c.Merge_Metric__c</members>
+        <members>Merge_Query__c.Object_Type__c</members>
+        <members>Merge_Query__c.SOQL_Query__c</members>
+        <members>Merge_Query__c.Source_Object_Account_Id__c</members>
+        <members>Merge_Query__c.Source_Object_Id__c</members>
+        <members>Merge_Query__c.Unique_Id__c</members>
         <name>CustomField</name>
     </types>
     <types>
@@ -168,6 +193,7 @@
         <members>C501_Merge_Contact_History__c</members>
         <members>C501_Merge_Metric__c</members>
         <members>Mass_Merge_Config__c</members>
+        <members>Merge_Query__c</members>
         <name>CustomObject</name>
     </types>
     <types>
@@ -195,6 +221,7 @@
         <members>C501_Merge_Account_History__c-Merge Account History Layout</members>
         <members>C501_Merge_Contact_History__c-Merge Contact History Layout</members>
         <members>C501_Merge_Metric__c-Merge Metric Layout</members>
+        <members>Merge_Query__c-Merge Query Layout</members>
         <name>Layout</name>
     </types>
     <types>
@@ -244,6 +271,7 @@
     </types>
     <types>
         <members>C501_Merge_Metric__c.C501_ListView_Discover</members>
+        <members>C501_Merge_Metric__c.C501_ListView_DiscoverContacts</members>
         <members>C501_Merge_Metric__c.C501_ListView_Merge</members>
         <name>WebLink</name>
     </types>

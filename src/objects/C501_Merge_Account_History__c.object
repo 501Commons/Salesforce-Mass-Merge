@@ -65,6 +65,35 @@
         <type>Lookup</type>
     </fields>
     <fields>
+        <fullName>Action__c</fullName>
+        <externalId>false</externalId>
+        <label>Action</label>
+        <required>false</required>
+        <trackTrending>false</trackTrending>
+        <type>Picklist</type>
+        <valueSet>
+            <restricted>true</restricted>
+            <valueSetDefinition>
+                <sorted>false</sorted>
+                <value>
+                    <fullName>Ignore Duplicate</fullName>
+                    <default>false</default>
+                    <label>Ignore Duplicate</label>
+                </value>
+                <value>
+                    <fullName>Use Duplicate</fullName>
+                    <default>false</default>
+                    <label>Use Duplicate</label>
+                </value>
+                <value>
+                    <fullName>Error</fullName>
+                    <default>false</default>
+                    <label>Error</label>
+                </value>
+            </valueSetDefinition>
+        </valueSet>
+    </fields>
+    <fields>
         <fullName>Field__c</fullName>
         <externalId>false</externalId>
         <label>Field</label>
@@ -79,7 +108,7 @@
         <description>Value ignored during the merge and instead using the Merge value in the Merged object.</description>
         <externalId>false</externalId>
         <inlineHelpText>Value ignored during the merge and instead using the Merge value in the Merged object.</inlineHelpText>
-        <label>Ignore Value</label>
+        <label>Duplicate Value</label>
         <length>255</length>
         <required>true</required>
         <trackTrending>false</trackTrending>
@@ -89,7 +118,7 @@
     <fields>
         <fullName>Merge_Value__c</fullName>
         <externalId>false</externalId>
-        <label>Merge Value</label>
+        <label>Master Value</label>
         <length>255</length>
         <required>true</required>
         <trackTrending>false</trackTrending>

@@ -542,7 +542,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                         }                        
                     }
                 }
-                c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c>{}, listAccountsMergesMaster.values(), false);
+                c501MassMerge_SharedCode_Account.ProcessObjectMerges(new List<C501_Merge_Metric__c>{}, listAccountsMergesMaster.values());
             }
 
             strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
@@ -558,6 +558,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             C501_MM_Rule_Discover_Accounts.executeFuture();
             C501_MM_Rule_Discover_ContactsAccount.executeFuture();
             C501_MM_Rule_Discover_ContactsAccounts.executeFuture();
+            C501_MM_Process_Merge_Queries.executeFuture();
 
             C501_MassMerge_SharedCode.OutputDebugLogFlush();
 

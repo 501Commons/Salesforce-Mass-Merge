@@ -100,7 +100,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
         try
         {
             C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-            c501MassMerge_SharedCode_Contact.ProcessObjectMerges(mergeMetrics, new List<C501_Contact_Merge__c> { objectMerge }, true);
+            c501MassMerge_SharedCode_Contact.ProcessObjectMerges(mergeMetrics, new List<C501_Contact_Merge__c> { objectMerge });
         }
         catch (C501_MassMerge_SharedCode_Contact.C501_MassMerge_SharedCode_ContactException customException)
         {
@@ -137,7 +137,7 @@ public class C501_CTRL_MassMergeContacts_TEST {
         Test.StartTest();
 
         C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-        c501MassMerge_SharedCode_Contact.ProcessObjectMerges(mergeMetrics, new List<C501_Contact_Merge__c> { objectMerge }, false);
+        c501MassMerge_SharedCode_Contact.ProcessObjectMerges(mergeMetrics, new List<C501_Contact_Merge__c> { objectMerge });
 
         Test.StopTest();
     }
@@ -145,12 +145,13 @@ public class C501_CTRL_MassMergeContacts_TEST {
     @isTest(SeeAllData='true')
     public static void CodeCoverageTests() {
 
+        Test.StartTest();
+
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
 
         Id masterObjectId = [SELECT Id FROM Contact WHERE Name LIKE '%TESTDATA%' ORDER BY Id ASC LIMIT 1].Id;
 
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
-        Test.StartTest();
 
         //point to our VF page
         PageReference p = new PageReference('Page.MassMergeContacts');
@@ -158,16 +159,15 @@ public class C501_CTRL_MassMergeContacts_TEST {
         Test.setCurrentPageReference(p);
         
         C501_CTRL_MassMergeContacts ctrl = new C501_CTRL_MassMergeContacts();
-        System.AssertEquals(masterObjectId, ctrl.objectFilter.Id);
 
+        // StopTest will make sure any future, schedulable, and batch calls complete before proceeding
+        Test.StopTest();
+
+        System.AssertEquals(masterObjectId, ctrl.objectFilter.Id);
         System.Assert(ctrl.listSOContacts.size() > 1);
         System.Assert(ctrl.listContacts.size() > 0);
 
         ctrl.objectFilter.Id = null;
-
-        System.Assert(ctrl.listSOContacts.size() > 1);
-        System.Assert(ctrl.listContacts.size() > 0);
-
         ctrl.ChangeMergeConfidence();
         ctrl.ChangeRule();
         ctrl.ChangeContact();
@@ -207,19 +207,23 @@ public class C501_CTRL_MassMergeContacts_TEST {
         ctrl.listContacts[0].C501_Merge_Action__c = 'Master';
         ctrl.listContacts[ctrl.listContacts.size() - 1].C501_Merge_Action__c = 'Ignore';
 
+        // Contains @Future Calls - proceed with a Test.Stop() to make sure Future is completed
         ctrl.SaveContacts();
 
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts_TEST::CodeCoverageTests' + ctrl.strSaveResults);
         //System.Assert(ctrl.strSaveResults.startsWith('Error'));
         ctrl.ChangeRule();
+
+        // Contains @Future Calls - proceed with a Test.Stop() to make sure Future is completed
         ctrl.SaveContacts();      
+
         //System.AssertEquals(0, ctrl.numberOfRecordsDirty);  
 
         // Clear out household filter
         ctrl.objectFilter.Id = null;
-        ctrl.SaveAndCloseContacts();   
 
-        Test.StopTest();
+        // Contains @Future Calls - proceed with a Test.Stop() to make sure Future is completed
+        ctrl.SaveAndCloseContacts();   
     }
 
     @isTest(SeeAllData='true')
@@ -273,40 +277,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
             mergeMetric.AutoMerge_Percentage__c = 0.0;
             mergeMetric.AutoMerge_Objects__c = '';
-        }
-
-        update mergeMetrics;
-
-        Test.StartTest();
-
-        C501_MM_Rule_Merge mergeRule = new C501_MM_Rule_Merge();
-        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
-            mergeRule.executeMetricById(mergeMetric.Id);
-        }
-
-        Test.StopTest();
-
-        List<C501_Contact_Merge__c> objectMergesAfter = Database.query(strSoql);
-        System.AssertEquals(objectMergesBefore.size(), objectMergesAfter.size());
-    }
-
-    @isTest(SeeAllData='true')
-    public static void ProcessObjectMerges_NoMergeBelowAutoMergePercentageTest() {
-
-        List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Contact Test');
-
-        String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-        if (String.isBlank(strSoql)) {
-            return;
-        }
-        strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
-
-        List<C501_Contact_Merge__c> objectMergesBefore = Database.query(strSoql);
-        System.Assert(objectMergesBefore.size() > 0);
-
-        for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
-
-            mergeMetric.AutoMerge_Percentage__c = 100.0;
         }
 
         update mergeMetrics;
@@ -536,7 +506,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
             mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
         update mergeMetrics;

@@ -59,21 +59,21 @@
         <layoutColumns>
             <layoutItems>
                 <behavior>Edit</behavior>
-                <field>Enable_Account_Merge_Discovery__c</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Readonly</behavior>
-                <field>Total_Unassigned_Accounts__c</field>
+                <field>Discovery_Objects__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns>
             <layoutItems>
-                <behavior>Edit</behavior>
-                <field>Enable_Contact_Merge_Discovery__c</field>
+                <behavior>Readonly</behavior>
+                <field>Total_Unassigned_Accounts__c</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Readonly</behavior>
                 <field>Total_Unassigned_Contacts__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Readonly</behavior>
+                <field>Total_Ignore__c</field>
             </layoutItems>
         </layoutColumns>
         <style>TwoColumnsLeftToRight</style>
@@ -87,10 +87,6 @@
             <layoutItems>
                 <behavior>Edit</behavior>
                 <field>AutoMerge_Objects__c</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Edit</behavior>
-                <field>Discover_AutoMerge_Objects_Only__c</field>
             </layoutItems>
         </layoutColumns>
         <layoutColumns/>
@@ -137,7 +133,6 @@
         <fields>NAME</fields>
         <fields>Account__c</fields>
         <fields>Merge_Target_Account__c</fields>
-        <fields>Merge_Confidence__c</fields>
         <relatedList>C501_Account_Merge__c.Merge_Metric__c</relatedList>
     </relatedLists>
     <relatedLists>
@@ -150,7 +145,6 @@
         <fields>NAME</fields>
         <fields>Contact__c</fields>
         <fields>Merge_Target_Contact__c</fields>
-        <fields>Merge_Confidence__c</fields>
         <relatedList>C501_Contact_Merge__c.Merge_Metric__c</relatedList>
     </relatedLists>
     <showEmailCheckbox>false</showEmailCheckbox>

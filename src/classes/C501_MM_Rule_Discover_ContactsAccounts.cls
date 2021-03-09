@@ -77,7 +77,15 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
             return;
         }
 
-        this.ProcessMergeMetrics(strSoql);
+        Rule_Discover_ContactsAccounts_Batch batchDiscover = new Rule_Discover_ContactsAccounts_Batch();
+        batchDiscover.query = strSoql;
+        batchDiscover.start = DateTime.now();
+
+        if (!Test.isRunningTest()) {
+            Database.executeBatch(batchDiscover);
+        } else {
+            this.ProcessMergeMetrics(strSoql);
+        }
     }
 
     public void executeMetricById(Id mergeMetricId) {
@@ -178,10 +186,7 @@ public class C501_MM_Rule_Discover_ContactsAccounts implements Schedulable {
                 }
             } while (retriesRemaining-- > 0);
 
-            mergeMetricUpdate = [SELECT Id, Name, Last_ContactsAccounts_Discover_Date__c FROM C501_Merge_Metric__c WHERE Id = :mergeMetricUpdate.Id LIMIT 1];
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics update mergeMetric Name: ' + mergeMetricUpdate.Name + ' Last Account Discover Date (After Update): ' + mergeMetricUpdate.Last_ContactsAccounts_Discover_Date__c.format());
-
-            discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Contacts_Across_Accounts.name().replace('_', ' '));
+            discover.ProcessReport(reportId, mergeMetric, C501_MassMerge_SharedCode.MergeObjectScenarios.Contacts_Across_Accounts.name());
             if (C501_MassMerge_SharedCode.NearSalesforceLimits()) {
                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.WARN, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessMergeMetrics Near Salesforce Limits so kick out');
                 break;

@@ -52,20 +52,12 @@ trigger C501_Merge_MetricTrigger on C501_Merge_Metric__c (before delete, after u
         C501_Merge_Metric__c updatedRecord = Trigger.newMap.get(mergeMetric.Id);
         C501_Merge_Metric__c previousRecord = Trigger.oldMap.get(mergeMetric.Id);
 
-        if (updatedRecord.Discover_AutoMerge_Objects_Only__c <> previousRecord.Discover_AutoMerge_Objects_Only__c ||
-            updatedRecord.Enable_Account_Merge_Discovery__c <> previousRecord.Enable_Account_Merge_Discovery__c ||
-            updatedRecord.Enable_Contact_Merge_Discovery__c <> previousRecord.Enable_Contact_Merge_Discovery__c ||
+        if (updatedRecord.Discovery_Objects__c <> previousRecord.Discovery_Objects__c ||
             updatedRecord.AutoMerge_Objects__c <> previousRecord.AutoMerge_Objects__c) {
             
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger change detected in a field related to merge candidates updatedRecord: ' + updatedRecord);
-            if (updatedRecord.Discover_AutoMerge_Objects_Only__c <> previousRecord.Discover_AutoMerge_Objects_Only__c) {
-              C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - Discover_AutoMerge_Objects_Only__c - current: ' + updatedRecord.Discover_AutoMerge_Objects_Only__c + ' previous: ' + previousRecord.Discover_AutoMerge_Objects_Only__c);
-            }
-            if (updatedRecord.Enable_Account_Merge_Discovery__c <> previousRecord.Enable_Account_Merge_Discovery__c) {
-              C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - Enable_Account_Merge_Discovery__c - current: ' + updatedRecord.Enable_Account_Merge_Discovery__c + ' previous: ' + previousRecord.Enable_Account_Merge_Discovery__c);
-            }
-            if (updatedRecord.Enable_Contact_Merge_Discovery__c <> previousRecord.Enable_Contact_Merge_Discovery__c) {
-              C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - Enable_Contact_Merge_Discovery__c - current: ' + updatedRecord.Enable_Contact_Merge_Discovery__c + ' previous: ' + previousRecord.Enable_Contact_Merge_Discovery__c);
+            if (updatedRecord.Discovery_Objects__c <> previousRecord.Discovery_Objects__c) {
+              C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - Discovery_Objects__c - current: ' + updatedRecord.Discovery_Objects__c + ' previous: ' + previousRecord.Discovery_Objects__c);
             }
             if (updatedRecord.AutoMerge_Objects__c <> previousRecord.AutoMerge_Objects__c) {
               C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, 'C501_Merge_MetricTrigger - AutoMerge_Objects__c - current: ' + updatedRecord.AutoMerge_Objects__c + ' previous: ' + previousRecord.AutoMerge_Objects__c);

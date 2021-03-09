@@ -28,65 +28,17 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-public class C501_MassMerge_Batch implements Database.Batchable<sObject> { 
+public class C501_MassMerge_Batch implements Queueable { 
 
-  public String query;
-  public Boolean AccountMerge = false;
-  public Boolean ContactMerge = false;
+    public void execute(QueueableContext info) {
+        
+        String strSoql = C501_MassMerge_SharedCode.GetC501MergeMetricQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
 
-  public Database.querylocator start(Database.BatchableContext BC) {
-    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::start - query: ' + query);
-    return Database.getQueryLocator(query);
-  }
-
-  public void execute(Database.BatchableContext info, List<sObject> scope) {
-    
-    if (AccountMerge) {
-      List<Account> accountDuplicates = new List<Account>();
-      Account masterAccount = null;
-      for (sObject mergeObject :scope) {
-        C501_Account_Merge__c mergeCandidate = (C501_Account_Merge__c)mergeObject;
-
-        masterAccount = new Account( Id = mergeCandidate.Account__c );
-        accountDuplicates.add(new Account( Id = mergeCandidate.Merge_Target_Account__c ));
-      }
-
-      C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterAccount: ' + String.valueOf(masterAccount));
-      C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - accountDuplicates: ' + String.valueOf(accountDuplicates));
-      C501_MassMerge_SharedCode_Account c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
-
-      try
-      {
-        c501MassMerge_SharedCode_Account.ObjectsMerge(masterAccount, accountDuplicates);
-      }
-      catch (C501_MassMerge_SharedCode_Account.C501_MassMerge_SharedCode_AccountException customException)
-      {
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_Batch::execute - C501_MassMerge_SharedCode_AccountException: ' + String.valueOf(customException.getMessage()));
-      }
-      catch (System.DmlException dmlException) {
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - System.DmlException: ' + String.valueOf(dmlException.getMessage()));
-      }
-      catch (Exception generalException) {
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - Exception: ' + String.valueOf(generalException.getMessage()));
-      }
+        // Process only the Account Merges from the Queuable to avoid a NPSP future call error.  
+        // NPSP trigger on account delete creates a future call which throws DMLException if you merge in a batch
+        C501_MM_Rule_Merge.get().ProcessMergeMetrics(strSoql, true);
     }
-    else if (ContactMerge) {
-      List<Contact> contactDuplicates = new List<Contact>();
-      Contact masterContact = null;
-      for (sObject mergeObject :scope) {
-        C501_Contact_Merge__c mergeCandidate = (C501_Contact_Merge__c)mergeObject;
-
-        masterContact = new Contact( Id = mergeCandidate.Contact__c );
-        contactDuplicates.add(new Contact( Id = mergeCandidate.Merge_Target_Contact__c ));
-      }
-
-      C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - masterContact: ' + String.valueOf(masterContact));
-      C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_Batch::execute - contactDuplicates: ' + String.valueOf(contactDuplicates));
-      C501_MassMerge_SharedCode_Contact c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
-      c501MassMerge_SharedCode_Contact.ObjectsMerge(masterContact, contactDuplicates);
-    }
-  }
-
-  public void finish(Database.BatchableContext info) {
-  }
 }
