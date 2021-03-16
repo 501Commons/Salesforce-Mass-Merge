@@ -130,36 +130,25 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         String strSoqlFrom = ' FROM C501_Contact_Merge__c';
         String strSoqlWhere = ' WHERE Merge_Action__c = null';
         strSoqlWhere += ' AND isDeleted = false';
-        //strSoqlWhere += ' AND Merge_Confidence__c >= '  + fromMergeConfidence;
-        //strSoqlWhere += ' AND Merge_Confidence__c <= ' + toMergeConfidence;
+
         if (!String.isBlank(mergeRule)) {
-            strSoqlWhere += '  AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
+            strSoqlWhere += ' AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
         }
 
-        // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
-        String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
-
-        // Get Contacts using the Contact_c field
-        //
-        String strSoqlSelect = 'SELECT Contact__c, Contact__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql1: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
-        for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
+        String strSoqlSelect = 'SELECT Contact__r.Name, Merge_Target_Contact__r.Name';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
+        for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere)) {
 
             mapSelectOption.put(
-                mergeRecord.Contact__c,
-                new SelectOption(mergeRecord.Contact__c, mergeRecord.Contact__r.Name));
-        }
-
-        // Get Contacts using the Merge_Target_Contact_c field
-        //
-        strSoqlSelect = 'SELECT Merge_Target_Contact__c, Merge_Target_Contact__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql2: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
-        for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
+                mergeRecord.Contact__r.Name,
+                new SelectOption(mergeRecord.Contact__r.Name, mergeRecord.Contact__r.Name));
 
             mapSelectOption.put(
-                mergeRecord.Merge_Target_Contact__c,
-                new SelectOption(mergeRecord.Merge_Target_Contact__c, mergeRecord.Merge_Target_Contact__r.Name));
+                mergeRecord.Merge_Target_Contact__r.Name,
+                new SelectOption(mergeRecord.Merge_Target_Contact__r.Name, mergeRecord.Merge_Target_Contact__r.Name));
         }
+
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence mapSelectOption: ' + mapSelectOption);
 
         List<SelectOption> listSOSorted = new List<SelectOption>();
         listSOSorted = C501_MassMerge_SharedCode.SelectOptionSortByLabel(mapSelectOption.values());

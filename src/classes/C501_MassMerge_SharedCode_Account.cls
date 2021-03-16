@@ -35,7 +35,7 @@
 //      2) Copy/Paste entire class to all other C501_MassMerge_SharedCode_[Object].cls classes
 //      3) Search and replace all [Object] references with [Target Object]
 //
-//  This is a workaround for Generic classes since <T> - Templating not supported in Apexs
+//  This is a workaround for Generic classes since <T> - Templating not supported in Apex
 //
 
 public without sharing class C501_MassMerge_SharedCode_Account { 
@@ -130,36 +130,25 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         String strSoqlFrom = ' FROM C501_Account_Merge__c';
         String strSoqlWhere = ' WHERE Merge_Action__c = null';
         strSoqlWhere += ' AND isDeleted = false';
-        //strSoqlWhere += ' AND Merge_Confidence__c >= '  + fromMergeConfidence;
-        //strSoqlWhere += ' AND Merge_Confidence__c <= ' + toMergeConfidence;
+
         if (!String.isBlank(mergeRule)) {
-            strSoqlWhere += '  AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
+            strSoqlWhere += ' AND Merge_Metric__r.Name = \'' + mergeRule + '\'';
         }
 
-        // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
-        String strSoqlLimit = ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
-
-        // Get Accounts using the Account_c field
-        //
-        String strSoqlSelect = 'SELECT Account__c, Account__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql1: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
-        for (C501_Account_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
+        String strSoqlSelect = 'SELECT Account__r.Name, Merge_Target_Account__r.Name';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
+        for (C501_Account_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere)) {
 
             mapSelectOption.put(
-                mergeRecord.Account__c,
-                new SelectOption(mergeRecord.Account__c, mergeRecord.Account__r.Name));
-        }
-
-        // Get Accounts using the Merge_Target_Account_c field
-        //
-        strSoqlSelect = 'SELECT Merge_Target_Account__c, Merge_Target_Account__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql2: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit);
-        for (C501_Account_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere + strSoqlLimit)) {
+                mergeRecord.Account__r.Name,
+                new SelectOption(mergeRecord.Account__r.Name, mergeRecord.Account__r.Name));
 
             mapSelectOption.put(
-                mergeRecord.Merge_Target_Account__c,
-                new SelectOption(mergeRecord.Merge_Target_Account__c, mergeRecord.Merge_Target_Account__r.Name));
+                mergeRecord.Merge_Target_Account__r.Name,
+                new SelectOption(mergeRecord.Merge_Target_Account__r.Name, mergeRecord.Merge_Target_Account__r.Name));
         }
+
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence mapSelectOption: ' + mapSelectOption);
 
         List<SelectOption> listSOSorted = new List<SelectOption>();
         listSOSorted = C501_MassMerge_SharedCode.SelectOptionSortByLabel(mapSelectOption.values());

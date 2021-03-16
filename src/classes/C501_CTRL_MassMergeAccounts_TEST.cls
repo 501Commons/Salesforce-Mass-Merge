@@ -149,60 +149,37 @@ public class C501_CTRL_MassMergeAccounts_TEST {
 
         List<C501_Merge_Metric__c> mergeMetrics = C501_MassMerge_SharedCode.TestDiscoverHelper('Account Test');
 
-        Id masterObjectId = [SELECT Id FROM Account WHERE Name LIKE '%TESTDATA%' ORDER BY Id ASC LIMIT 1].Id;
-
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '*****CodeCoverageTests - masterObjectId: ' + masterObjectId);
-
-        //point to our VF page
-        PageReference p = new PageReference('Page.MassMergeAccounts');
-        p.getParameters().put('Id', masterObjectId);
-        Test.setCurrentPageReference(p);
-        
         C501_CTRL_MassMergeAccounts ctrl = new C501_CTRL_MassMergeAccounts();
 
         // StopTest will make sure any future, schedulable, and batch calls complete before proceeding
         Test.StopTest();
 
-        System.AssertEquals(masterObjectId, ctrl.objectFilter.Id);
+        // Filter by Name
+        ctrl.objectFilter.C501_Merge_Name_Filter__c = 'TESTDATA';
+        ctrl.objectFilter.C501_Merge_Rule__c = '';
+        ctrl.ChangeRule();
+
         System.Assert(ctrl.listSOAccounts.size() > 1);
         System.Assert(ctrl.listAccounts.size() > 0);
 
-        ctrl.objectFilter.Id = null;
-        ctrl.ChangeMergeConfidence();
-        ctrl.ChangeRule();
         ctrl.ChangeAccount();
         ctrl.ResetAccounts();
         
-        System.Assert(ctrl.listSORules.size() > 0);
-
-        // Check filter by Rule
-        ctrl.objectFilter.Id = masterObjectId;
+        // Filter by Rule
+        ctrl.objectFilter.C501_Merge_Name_Filter__c = '';
         ctrl.objectFilter.C501_Merge_Rule__c = mergeMetrics[0].Name;
-        System.Assert(ctrl.listAccounts.size() > 0);
-
-        // Check filter by Confidence
-        ctrl.objectFilter.Id = masterObjectId;
-        ctrl.objectFilter.C501_Merge_Confidence_From__c = 0.0;
-        ctrl.objectFilter.C501_Merge_Confidence_To__c = 100.0;
-        System.Assert(ctrl.listAccounts.size() > 0);
-
-        // Clear filter
         ctrl.ChangeRule();
-        ctrl.objectFilter.Id = masterObjectId;
-        System.Assert(ctrl.listAccounts.size() > 0);
-        System.AssertEquals(0, ctrl.numberOfRecordsDirty);
-        
-        //ctrl.listAccounts.get(0).Amount = 2;
-        p.getParameters().put('usersIdDirtied', ctrl.listAccounts.get(0).id);
-        ctrl.AccountsRecordModified();
-        System.AssertEquals(1, ctrl.setAccountsIdDirty.size());
-        
-        Account objectInstance = ctrl.listAccounts.get(ctrl.listAccounts.size() - 1);
-        p.getParameters().put('usersIdDirtied', null);
-        ctrl.AccountsRecordModified();
-        System.AssertEquals(1, ctrl.setAccountsIdDirty.size());
-        System.AssertEquals(1, ctrl.numberOfRecordsDirty);
 
+        System.Assert(ctrl.listSORules.size() > 0);
+        System.Assert(ctrl.listAccounts.size() > 0);
+
+        // Clear filters
+        ctrl.objectFilter.C501_Merge_Name_Filter__c = '';
+        ctrl.objectFilter.C501_Merge_Rule__c = '';
+        ctrl.ChangeRule();
+
+        System.Assert(ctrl.listAccounts.size() > 0);
+        
         // test the save!
         ctrl.listAccounts[0].C501_Merge_Action__c = 'Master';
         ctrl.listAccounts[ctrl.listAccounts.size() - 1].C501_Merge_Action__c = 'Ignore';
@@ -216,14 +193,6 @@ public class C501_CTRL_MassMergeAccounts_TEST {
 
         // Contains @Future Calls - proceed with a Test.Stop() to make sure Future is completed
         ctrl.SaveAccounts();      
-
-        //System.AssertEquals(0, ctrl.numberOfRecordsDirty);  
-
-        // Clear out household filter
-        ctrl.objectFilter.Id = null;
-
-        // Contains @Future Calls - proceed with a Test.Stop() to make sure Future is completed
-        ctrl.SaveAndCloseAccounts();   
     }
 
     @isTest(SeeAllData='true')

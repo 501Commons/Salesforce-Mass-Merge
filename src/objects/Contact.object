@@ -133,6 +133,16 @@
         <unique>false</unique>
     </fields>
     <fields>
+        <fullName>C501_Merge_Name_Filter__c</fullName>
+        <externalId>false</externalId>
+        <label>Merge Name Filter</label>
+        <length>80</length>
+        <required>false</required>
+        <trackFeedHistory>false</trackFeedHistory>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>C501_Merge_Rule__c</fullName>
         <externalId>false</externalId>
         <label>Merge Rule</label>

@@ -33,6 +33,7 @@ public without sharing class C501_MassMerge_SharedCode {
     public enum MergeObjectScenarios { Account, Contacts_Within_Account, Contacts_Across_Accounts }
 
     public static final Integer INCREMENT_MERGE_CANDIDATE_GROUPBY = 5;
+    public static final Integer SALESFORCE_MAXIMUM_COLLECTION_SIZE = 1000;
     
     // Available Fields for merging
     //

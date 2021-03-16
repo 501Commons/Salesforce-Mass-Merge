@@ -44,10 +44,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         redirect = false;
         c501MassMerge_SharedCode_Contact = new C501_MassMerge_SharedCode_Contact();
         
-        // handle optional parameters (must use string, not ID, to handle null)
-        string id = ApexPages.currentPage().getParameters().get('id');
-        if (id != null && id != '') objectFilter.Id = id;
-
         // Get list of fields FROM fieldset
         listStrFields = new List<String>();
         for (Schema.FieldSetMember f : this.getFields()) {
@@ -200,18 +196,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
     public virtual PageReference ChangeRule() {
 
         listSOContacts = null;
-        objectFilter.Id = null;
-        listContacts = null;
-        strSaveResults = null;
-
-        return null;
-    }
-
-    // the user has changed the Confidence query
-    public virtual PageReference ChangeMergeConfidence() {
-
-        listSOContacts = null;
-        objectFilter.Id = null;
         listContacts = null;
         strSaveResults = null;
 
@@ -223,7 +207,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::ResetContacts');
 
         listSOContacts = null;
-        objectFilter.Id = null;
         listContacts = null;
     }
 
@@ -243,189 +226,112 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         set;
     }
         
-    // helper function that the client can override, to query for the appropriate fields in contacts.
+    // helper function that the client can override, to query for the appropriate fields in Contacts.
     public virtual void FillListContacts() {
 
-		Map<Id,C501_Contact_Merge__c> contactsMerge = new Map<Id,C501_Contact_Merge__c>();
-
-        if (objectFilter.Id <> null) {
-        
-            String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-            if (String.isBlank(strSoql)) {
-                return;
-            }
-            strSoql += ' AND (Contact__c = \'' + objectFilter.Id + '\' OR Merge_Target_Contact__c = \'' + objectFilter.Id + '\') AND Merge_Action__c = null';
-            strSoql += ' LIMIT 1';
-
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts ObjectFilter Query strSoql: ' + strSoql);
-
-            for(C501_Contact_Merge__c contactMerge :Database.query(strSoql)) {
-
-                    contactsMerge.put(
-                        contactMerge.Contact__c,
-                        new C501_Contact_Merge__c(
-                            Id = contactMerge.Id,
-                            Merge_Action__c = contactMerge.Merge_Action__c,
-                            Merge_Confidence__c = null,
-                            Contact__c = contactMerge.Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
-                            Merge_Metric__c = contactMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + contactMerge.Merge_Metric__r.Name
-                    ));
-
-                    contactsMerge.put(
-                        contactMerge.Merge_Target_Contact__c,
-                        new C501_Contact_Merge__c(
-                            Id = contactMerge.Id,
-                            Merge_Action__c = contactMerge.Merge_Action__c,
-                            Merge_Confidence__c = contactMerge.Merge_Confidence__c,
-                            Contact__c = contactMerge.Merge_Target_Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Contact__c,
-                            Merge_Metric__c = contactMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + contactMerge.Merge_Metric__r.Name
-                    ));
-            }
+        String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
         }
-        else {
+          
+        String strRuleFilterSoql = '';
+        if (!String.isBlank(objectFilter.C501_Merge_Rule__c)) {
+            strRuleFilterSoql = ' AND Merge_Metric__r.Name = \'' + objectFilter.C501_Merge_Rule__c + '\'';
+        }
 
-            Set<String> objectIds = new Set<String>();
-            for (SelectOption option : listSOContacts) {
-                objectIds.add(option.getValue());
+        String strNameFilterSoql = '';
+        if (!String.isBlank(objectFilter.C501_Merge_Name_Filter__c)) {      
+            
+            // Filter out MiddleName which doesn't work with Name LIKE SOQL
+            List<String> nameTokens = objectFilter.C501_Merge_Name_Filter__c.split(' ');
+            String shortName = nameTokens[0];
+            shortName += (nameTokens.size() > 1) ? '%' + nameTokens[nameTokens.size() - 1] : '';
+                        
+            strNameFilterSoql += ' AND (Contact__r.Name LIKE \'%' + shortName + '%\' OR Merge_Target_Contact__r.Name LIKE \'%' + shortName + '%\')';
+        }
 
-                // Performance: Only allow 100 at a time to load in the webpage
-                if (objectIds.size() >= 100) {
-                    break;
-                }
+        strSoql += strRuleFilterSoql + strNameFilterSoql + ' AND Merge_Action__c = null ORDER BY Contact__r.Name ASC';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts ObjectFilter Query strSoql: ' + strSoql);
+
+        Integer mergeIndex = 1;
+        String mergeBuffer = '0';
+		List<C501_Contact_Merge__c> contactsMerge = new List<C501_Contact_Merge__c>();
+        Set<Id> contactsMergeIds = new Set<Id>();
+
+        for (C501_Contact_Merge__c contactMerge :Database.query(strSoql)) {
+
+            contactsMerge.add(
+                new C501_Contact_Merge__c(
+                    Id = contactMerge.Id,
+                    Merge_Action__c = contactMerge.Merge_Action__c,
+                    Merge_Confidence__c = null,
+                    Contact__c = contactMerge.Contact__c,
+                    Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
+                    Merge_Metric__c = contactMerge.Merge_Metric__c,
+                    Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + contactMerge.Merge_Metric__r.Name
+            ));
+
+            mergeIndex++;
+            if (mergeIndex >= 10) {
+                mergeBuffer = '';
             }
 
-            Integer mergeIndex = 1;
-            String mergeBuffer = '0';
+            contactsMergeIds.add(contactMerge.Contact__c);
+            contactsMergeIds.add(contactMerge.Merge_Target_Contact__c);
 
-            String mergeRule = objectFilter.C501_Merge_Rule__c;
-            String strRuleSoql = '';
-            if (mergeRule <> null && !String.isBlank(mergeRule)) {
-                strRuleSoql = ' and Merge_Metric__r.Name = \'' + mergeRule + '\'';
-            }
-
-            String strSoql = C501_MassMerge_SharedCode.GetC501ContactMergeQuery();
-            if (String.isBlank(strSoql)) {
-                return;
-            }
-            strSoql += ' AND (Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Contact__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ') AND Merge_Action__c = null';
-            strSoql += strRuleSoql;
-            strSoql += ' ORDER BY Contact__r.Name ASC';
-
-            // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
-            strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
-
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts No ObjectFilter Query strSoql: ' + strSoql);
-
-            for(C501_Contact_Merge__c contactMerge : Database.Query(strSoql)) {
-
-                    if (contactsMerge.containsKey(contactMerge.Contact__c) || contactsMerge.containsKey(contactMerge.Merge_Target_Contact__c)) {
-                        continue;
-                    }
-
-                    contactsMerge.put(
-                        contactMerge.Contact__c,
-                        new C501_Contact_Merge__c(
-                            Id = contactMerge.Id,
-                            Merge_Action__c = contactMerge.Merge_Action__c,
-                            Merge_Confidence__c = null,
-                            Contact__c = contactMerge.Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
-                            Merge_Metric__c = contactMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + contactMerge.Merge_Metric__r.Name
-                    ));
-
-                    contactsMerge.put(
-                        contactMerge.Merge_Target_Contact__c,
-                        new C501_Contact_Merge__c(
-                            Id = contactMerge.Id,
-                            Merge_Action__c = contactMerge.Merge_Action__c,
-                            Merge_Confidence__c = contactMerge.Merge_Confidence__c,
-                            Contact__c = contactMerge.Merge_Target_Contact__c,
-                            Merge_Target_Contact__c = contactMerge.Contact__c,
-                            Merge_Metric__c = contactMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + contactMerge.Merge_Metric__r.Name
-                    ));
-
-                    mergeIndex++;
-                    if (mergeIndex >= 10) {
-                        mergeBuffer = '';
-                    }
+            // Max collection size check for at least half because merge candidates generate double the Contact records (checking for more because hitting View State Size Limit)
+            if (mergeIndex >= (C501_MassMerge_SharedCode.SALESFORCE_MAXIMUM_COLLECTION_SIZE / 3)) {
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.WARNING, 'Maximum records exceeded so loading a subset of the total merge candidates.  Try adding Filter by Contact or Filter by Rule criteria if you are having trouble finding a specific merge candidate.'));
+                break;
             }
         }
 
-        Set<Id> contactsMergeIds = contactsMerge.keySet();
-
-        String strSoql = 'SELECT ' + String.join(listStrFields, ',');
+        strSoql = 'SELECT ' + String.join(listStrFields, ',');
         strSoql += ' FROM Contact WHERE Id in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(contactsMergeIds);
-        strSoql += ' order by C501_Merge_Metric_Name__c ASC NULLS FIRST';
-        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize());
+        strSoql += ' ORDER BY C501_Merge_Metric_Name__c ASC NULLS FIRST';
+        //strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize());
         
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts Contact Query strSoql: ' + strSoql);
 
-        listContacts = Database.Query(strSoql);
-
-        for ( Contact Contact :listContacts ) {
-            if (contactsMerge.containsKey(contact.Id)) {
-                C501_Contact_Merge__c mergeContact = contactsMerge.get(contact.Id);
-                contact.C501_Merge_Id__c = mergeContact.Id;
-                contact.C501_Merge_Action__c = mergeContact.Merge_Action__c;
-                contact.C501_Merge_Confidence__c = mergeContact.Merge_Confidence__c;
-                contact.C501_Merge_Contact__c = mergeContact.Contact__c;
-                contact.C501_Merge_Target__c = mergeContact.Merge_Target_Contact__c;
-                contact.C501_Merge_Metric_Name__c = mergeContact.Merge_Metric_Name__c;
-                contact.C501_Merge_Metric__c = mergeContact.Merge_Metric__c;
-            }
+        Map<Id, Contact> contactMap = new Map<Id, Contact>();
+        for (Contact objectRecord :Database.Query(strSoql) ) {
+            contactMap.put(objectRecord.Id, objectRecord);
         }
 
-        // Update Contacts w/ Merge fields then query to get the correct sort order by Metric Name
-        Database.SaveResult[] updateResults = Database.update(listContacts, false);
-        for (Database.SaveResult updateResult :updateResults) {
-            if (!updateResult.isSuccess()) {
-                for(Database.Error resultError : updateResult.getErrors()) {
-                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts');
-                }                        
-            }
-        }
+        listContacts = new List<Contact>();
+        for (C501_Contact_Merge__c mergeRecord :contactsMerge) {
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts strSoql: ' + strSoql);
-        listContacts = Database.Query(strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
+
+            Contact listRecord = contactMap.get(mergeRecord.Contact__c).clone(false, false, false, false);
+            listRecord.C501_Merge_Id__c = mergeRecord.Id;
+            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+            listRecord.C501_Merge_Contact__c = mergeRecord.Contact__c;
+            listRecord.C501_Merge_Target__c = mergeRecord.Merge_Target_Contact__c;
+            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+            listContacts.add(listRecord);
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+
+            // Switch Master and Duplicate
+            listRecord = contactMap.get(mergeRecord.Merge_Target_Contact__c).clone(false, false, false, false);
+            listRecord.C501_Merge_Id__c = mergeRecord.Id;
+            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+            listRecord.C501_Merge_Contact__c = mergeRecord.Merge_Target_Contact__c;
+            listRecord.C501_Merge_Target__c = mergeRecord.Contact__c;
+            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+            listContacts.add(listRecord);
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+        }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
     }
     
-    // used to track the Id's of all Contact records that get modified.
-    public Set<ID> setContactsIdDirty {
-        get {
-            if (setContactsIdDirty == null) {
-                setContactsIdDirty = new Set<ID>();
-            }
-            return setContactsIdDirty;
-        }
-        set;
-    }
-    
-    // to allow vf page to see how many Contact records are dirty
-    public Integer numberOfRecordsDirty {
-        get { 
-            if (setContactsIdDirty == null)
-                return 0;
-            else
-                return setContactsIdDirty.size();
-        }
-    }
-    
-    // this gets called whenever a field in the Contacts datatable is modified.
-    // use this to remember which existing Contacts records have been modified.
-    public virtual PageReference ContactsRecordModified() {
-        String strId = ApexPages.currentPage().getParameters().get('usersIdDirtied');
-        if (strId != null && strId != '') setContactsIdDirty.add(strId);
-        return null;
-    }
-
     public Contact getTargetMerge(Contact masterObject)
     {
         for (Contact objectItem :listContacts) {
@@ -459,10 +365,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
 
                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Master Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
 
-                    // we couldn't reliably mark dirty records in all scenarios,
-                    // so we've decided it is better to always update all records.
-                    //if (setContactsIdDirty.contains(contact.Id)) 
-
                     if (!listContactsMergesMaster.containsKey(contact.C501_Merge_Id__c)) {
 
                         Contact targetObject = getTargetMerge(contact);
@@ -490,10 +392,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                 else if (contact.Id != null && contact.C501_Merge_Action__c == 'Ignore') {
 
                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts Check Ignore Action - Merge Rule: ' + contact.C501_Merge_Metric_Name__c);
-
-                    // we couldn't reliably mark dirty records in all scenarios,
-                    // so we've decided it is better to always update all records.
-                    //if (setContactsIdDirty.contains(contact.Id)) 
 
                     if (!listContactsMergesIgnore.containsKey(contact.C501_Merge_Id__c)) {
 
@@ -544,9 +442,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
             ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.CONFIRM, strSaveResults));
 
-            // successful save, so clear out dirty list
-            setContactsIdDirty = null;
-
             // Refresh Contact and Contact Table
             ResetContacts();
 
@@ -567,27 +462,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         }
     }
 
-    //save the Contacts modified, and then close the page.
-    public virtual PageReference SaveAndCloseContacts() {
-        SaveContacts();
-        if (ApexPages.hasMessages(ApexPages.Severity.ERROR) ||
-           ApexPages.hasMessages(ApexPages.Severity.FATAL) ||
-            ApexPages.hasMessages(ApexPages.Severity.WARNING)) {
-                return null; // don't close window.
-        }
-        return Cancel();    
-    }
-    
-    // user wants to close this page
-    public virtual PageReference Cancel() {
-        // figure out which object to return to.
-        idRedirect = objectFilter.Id;
-        
-        // trigger our redirect component to redirect using javascript.
-        redirect = true;
-        return null;
-    }
-    
     // this was a which can't be compiled in this class under api 31.  
     // but because it was marked public, it could not be completely removed.
     public static void CodeCoverageTests() {}

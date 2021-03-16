@@ -69,6 +69,7 @@
         <members>Account.C501_Merge_Id__c</members>
         <members>Account.C501_Merge_Metric_Name__c</members>
         <members>Account.C501_Merge_Metric__c</members>
+        <members>Account.C501_Merge_Name_Filter__c</members>
         <members>Account.C501_Merge_Rule__c</members>
         <members>Account.C501_Merge_Target__c</members>
         <members>Account.C501_Shipping_Address__c</members>
@@ -139,6 +140,7 @@
         <members>Contact.C501_Merge_Id__c</members>
         <members>Contact.C501_Merge_Metric_Name__c</members>
         <members>Contact.C501_Merge_Metric__c</members>
+        <members>Contact.C501_Merge_Name_Filter__c</members>
         <members>Contact.C501_Merge_Rule__c</members>
         <members>Contact.C501_Merge_Target__c</members>
         <members>Contact.C501_Other_Address__c</members>

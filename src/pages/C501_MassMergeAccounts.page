@@ -79,9 +79,7 @@
     
                     <div class="slds-col--padded slds-no-flex slds-align-middle">
                         <div class="slds-button-group" role="group">
-                            <apex:commandButton styleClass="slds-button slds-button_neutral" action="{!Cancel}" value="{!IF(ISNULL(strSaveResults), $Label.Merge_labelButtonCancel, $Label.Merge_labelButtonClose)}" immediate="true" reRender="vfform"/> 
                             <apex:commandButton styleClass="slds-button slds-button_brand" action="{!SaveAccounts}" value="{!$Label.Merge_labelButtonSave}" id="btnSave" immediate="false" reRender="vfform,ddlAccounts,tblAccounts"/>
-                            <apex:commandButton styleClass="slds-button slds-button_neutral" action="{!SaveAndCloseAccounts}" value="{!$Label.Merge_labelButtonSaveAndClose}" id="btnSaveClose" immediate="false" reRender="vfform"/>
                         </div>
                     </div>
                 </div>
@@ -95,7 +93,7 @@
                         <apex:outputLabel for="ddlAccounts" styleClass="slds-form-element__label" >
                             Filter by Account
                         </apex:outputLabel>
-                        <apex:selectList id="ddlAccounts" value="{!objectFilter.Id}" required="false" size="1" styleClass="slds-select" disabled="{!listSOAccounts.size=1}">
+                        <apex:selectList id="ddlAccounts" value="{!objectFilter.C501_Merge_Name_Filter__c}" required="false" size="1" styleClass="slds-select" disabled="{!listSOAccounts.size=1}">
                             <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeAccount}" />
                             <apex:selectOptions value="{!listSOAccounts}" /> 
                         </apex:selectList>
@@ -112,29 +110,6 @@
                     <div class="slds-col--padded slds-size--1-of-3"/>
                 </div>
             </fieldset>
-<!--            
-            <fieldset class="slds-form slds-m-top--small slds-m-bottom--large">
-                <div class="slds-grid">
-                    <div class="slds-col--padded slds-size--1-of-3 slds-form-element">
-                        <apex:outputLabel for="fldConfidenceFrom" styleClass="slds-form-element__label" >
-                            {!$Label.Merge_labelMassMergeFilterConfidenceFrom}
-                        </apex:outputLabel>
-                        <apex:inputField id="fldConfidenceFrom" required="false" value="{!objectFilter.C501_Merge_Confidence_From__c}" label="" styleClass="slds-input" >
-                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeMergeConfidence}" />
-                        </apex:inputField>
-                    </div>
-                    <div class="slds-col--padded slds-size--1-of-3 slds-form-element">
-                        <apex:outputLabel for="fldConfidenceTo" styleClass="slds-form-element__label" >
-                            {!$Label.Merge_labelMassMergeFilterConfidenceTo}
-                        </apex:outputLabel>
-                        <apex:inputField id="fldConfidenceTo" required="false" value="{!objectFilter.C501_Merge_Confidence_To__c}" label="" styleClass="slds-input" >
-                            <apex:actionSupport immediate="false" event="onchange" rerender="ddlAccounts,ddlRules,tblAccounts" status="retrieveStatus" action="{!ChangeMergeConfidence}" />
-                        </apex:inputField>
-                    </div>
-                    <div class="slds-col--padded slds-size--1-of-3"/>
-                </div> 
-            </fieldset>   
--->
 
             <apex:dataTable value="{!listAccounts}" var="account" id="tblAccounts" 
                 styleClass="slds-table slds-table_bordered slds-table_striped slds-table_fixed-layout"

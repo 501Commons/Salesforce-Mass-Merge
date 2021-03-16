@@ -44,10 +44,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         redirect = false;
         c501MassMerge_SharedCode_Account = new C501_MassMerge_SharedCode_Account();
         
-        // handle optional parameters (must use string, not ID, to handle null)
-        string id = ApexPages.currentPage().getParameters().get('id');
-        if (id != null && id != '') objectFilter.Id = id;
-        
         // Get list of fields FROM fieldset
         listStrFields = new List<String>();
         for (Schema.FieldSetMember f : this.getFields()) {
@@ -118,6 +114,8 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         get {
             if (listSOAccounts == null )
                 listSOAccounts = c501MassMerge_SharedCode_Account.ListObjectsWithConfidence(objectFilter.C501_Merge_Rule__c, objectFilter.C501_Merge_Confidence_From__c, objectFilter.C501_Merge_Confidence_To__c);
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::listSOAccounts listSOAccounts size: ' + String.valueOf(listSOAccounts.size()));
 
             return listSOAccounts;
         }
@@ -200,19 +198,9 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
     // the user has changed the Rule dropdown
     public virtual PageReference ChangeRule() {
 
-        listSOAccounts = null;
-        objectFilter.Id = null;
-        listAccounts = null;
-        strSaveResults = null;
-
-        return null;
-    }
-
-    // the user has changed the Confidence query
-    public virtual PageReference ChangeMergeConfidence() {
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::ChangeRule');
 
         listSOAccounts = null;
-        objectFilter.Id = null;
         listAccounts = null;
         strSaveResults = null;
 
@@ -224,14 +212,13 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::ResetAccounts');
 
         listSOAccounts = null;
-        objectFilter.Id = null;
         listAccounts = null;
     }
 
     // status string for reporting the results of saving.
     public String strSaveResults { get; set; }
       
-    // The list of Accounts.
+    // The list of Accounts
     public List<Account> listAccounts {
         get {
             if (listAccounts == null) {
@@ -247,192 +234,101 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
     // helper function that the client can override, to query for the appropriate fields in Accounts.
     public virtual void FillListAccounts() {
 
-		Map<Id,C501_Account_Merge__c> accountsMerge = new Map<Id,C501_Account_Merge__c>();
+        String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
+        if (String.isBlank(strSoql)) {
+            return;
+        }
+         
+        String strRuleFilterSoql = '';
+        if (!String.isBlank(objectFilter.C501_Merge_Rule__c)) {
+            strRuleFilterSoql = ' AND Merge_Metric__r.Name = \'' + objectFilter.C501_Merge_Rule__c + '\'';
+        }
 
-        if (objectFilter.Id <> null) {
+        String strNameFilterSoql = '';
+        if (!String.isBlank(objectFilter.C501_Merge_Name_Filter__c)) {      
+            strNameFilterSoql += ' AND (Account__r.Name LIKE \'%' + objectFilter.C501_Merge_Name_Filter__c + '%\' OR Merge_Target_Account__r.Name LIKE \'%' + objectFilter.C501_Merge_Name_Filter__c + '%\')';
+        }
+
+        strSoql += strRuleFilterSoql + strNameFilterSoql + ' AND Merge_Action__c = null ORDER BY Account__r.Name ASC';
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts ObjectFilter Query strSoql: ' + strSoql);
+
+        Integer mergeIndex = 1;
+        String mergeBuffer = '0';
+		List<C501_Account_Merge__c> AccountsMerge = new List<C501_Account_Merge__c>();
+        Set<Id> AccountsMergeIds = new Set<Id>();
+
+        for (C501_Account_Merge__c AccountMerge :Database.query(strSoql)) {
+
+            AccountsMerge.add(
+                new C501_Account_Merge__c(
+                    Id = AccountMerge.Id,
+                    Merge_Action__c = AccountMerge.Merge_Action__c,
+                    Merge_Confidence__c = null,
+                    Account__c = AccountMerge.Account__c,
+                    Merge_Target_Account__c = AccountMerge.Merge_Target_Account__c,
+                    Merge_Metric__c = AccountMerge.Merge_Metric__c,
+                    Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + AccountMerge.Merge_Metric__r.Name
+            ));
+
+            mergeIndex++;
+            if (mergeIndex >= 10) {
+                mergeBuffer = '';
+            }
+
+            AccountsMergeIds.add(AccountMerge.Account__c);
+            AccountsMergeIds.add(AccountMerge.Merge_Target_Account__c);
+
+            // Max collection size check for at least half because merge candidates generate double the Contact records (checking for more because hitting View State Size Limit)
+            if (mergeIndex >= (C501_MassMerge_SharedCode.SALESFORCE_MAXIMUM_COLLECTION_SIZE / 3)) {
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.WARNING, 'Maximum records exceeded so loading a subset of the total merge candidates.  Try adding Filter by Contact or Filter by Rule criteria if you are having trouble finding a specific merge candidate.'));
+                break;
+            }
+        }
+
+        strSoql = 'SELECT ' + String.join(listStrFields, ',');
+        strSoql += ' FROM Account WHERE Id in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(AccountsMergeIds);
+        strSoql += ' ORDER BY C501_Merge_Metric_Name__c ASC NULLS FIRST';
+        //strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize());
         
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::FillListAccounts objectFilter.Id: ' + objectFilter.Id);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts Account Query strSoql: ' + strSoql);
 
-            String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-            if (String.isBlank(strSoql)) {
-                return;
-            }
-            strSoql += ' AND (Account__c = \'' + objectFilter.Id + '\' OR Merge_Target_Account__c = \'' + objectFilter.Id + '\') AND Merge_Action__c = null';
-            strSoql += ' LIMIT 1';
-
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql1: ' + strSoql);
-
-            for(C501_Account_Merge__c accountMerge : Database.query(strSoql)) {
-
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::FillListAccounts accountMerge: ' + accountMerge);
-
-                    accountsMerge.put(
-                        accountMerge.Account__c,
-                        new C501_Account_Merge__c(
-                            Id = accountMerge.Id,
-                            Merge_Action__c = accountMerge.Merge_Action__c,
-                            Merge_Confidence__c = null,
-                            Account__c = accountMerge.Account__c,
-                            Merge_Target_Account__c = accountMerge.Merge_Target_Account__c,
-                            Merge_Metric__c = accountMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + accountMerge.Merge_Metric__r.Name
-                    ));
-
-                    accountsMerge.put(
-                        accountMerge.Merge_Target_Account__c,
-                        new C501_Account_Merge__c(
-                            Id = accountMerge.Id,
-                            Merge_Action__c = accountMerge.Merge_Action__c,
-                            Merge_Confidence__c = accountMerge.Merge_Confidence__c,
-                            Account__c = accountMerge.Merge_Target_Account__c,
-                            Merge_Target_Account__c = accountMerge.Account__c,
-                            Merge_Metric__c = accountMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + accountMerge.Merge_Metric__r.Name
-                    ));
-            }
-        }
-        else {
-
-            Set<String> objectIds = new Set<String>();
-            for (SelectOption option : listSOAccounts) {
-                objectIds.add(option.getValue());
-
-                // Performance: Only allow 100 at a time to load in the webpage
-                if (objectIds.size() >= 100) {
-                    break;
-                }
-            }
-
-            Integer mergeIndex = 1;
-            String mergeBuffer = '0';
-
-            String mergeRule = objectFilter.C501_Merge_Rule__c;
-            String strRuleSoql = '';
-            if (mergeRule <> null && !String.isBlank(mergeRule)) {
-                strRuleSoql = ' and Merge_Metric__r.Name = \'' + mergeRule + '\'';
-            }
-
-            String strSoql = C501_MassMerge_SharedCode.GetC501AccountMergeQuery();
-            if (String.isBlank(strSoql)) {
-                return;
-            }
-            strSoql += ' AND (Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ' OR Merge_Target_Account__c in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(objectIds) + ') AND Merge_Action__c = null';
-            strSoql += strRuleSoql;
-            strSoql += ' ORDER BY Account__r.Name ASC';
-
-            // Divide the Limit by 2 because the merge objects hold a pair of objects that are split into 2 for display
-            strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize() / 2);
-
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql2: ' + strSoql);
-
-            for(C501_Account_Merge__c accountMerge : Database.Query(strSoql)) {
-
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts accountMerge: ' + accountMerge);
-
-                    if (accountsMerge.containsKey(accountMerge.Account__c) || accountsMerge.containsKey(accountMerge.Merge_Target_Account__c)) {
-                        continue;
-                    }
-
-                    accountsMerge.put(
-                        accountMerge.Account__c,
-                        new C501_Account_Merge__c(
-                            Id = accountMerge.Id,
-                            Merge_Action__c = accountMerge.Merge_Action__c,
-                            Merge_Confidence__c = null,
-                            Account__c = accountMerge.Account__c,
-                            Merge_Target_Account__c = accountMerge.Merge_Target_Account__c,
-                            Merge_Metric__c = accountMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + accountMerge.Merge_Metric__r.Name
-                    ));
-
-                    accountsMerge.put(
-                        accountMerge.Merge_Target_Account__c,
-                        new C501_Account_Merge__c(
-                            Id = accountMerge.Id,
-                            Merge_Action__c = accountMerge.Merge_Action__c,
-                            Merge_Confidence__c = accountMerge.Merge_Confidence__c,
-                            Account__c = accountMerge.Merge_Target_Account__c,
-                            Merge_Target_Account__c = accountMerge.Account__c,
-                            Merge_Metric__c = accountMerge.Merge_Metric__c,
-                            Merge_Metric_Name__c = 'Merge ' + mergeBuffer + mergeIndex + ' ' + accountMerge.Merge_Metric__r.Name
-                    ));
-
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts accountsMerge: ' + accountsMerge);
-
-                    mergeIndex++;
-                    if (mergeIndex >= 10) {
-                        mergeBuffer = '';
-                    }
-            }
+        Map<Id, Account> AccountMap = new Map<Id, Account>();
+        for (Account objectRecord :Database.Query(strSoql) ) {
+            AccountMap.put(objectRecord.Id, objectRecord);
         }
 
-        Set<Id> accountsMergeIds = accountsMerge.keySet();
+        listAccounts = new List<Account>();
+        for (C501_Account_Merge__c mergeRecord :AccountsMerge) {
 
-        String strSoql = 'SELECT ' + String.join(listStrFields, ',');
-        strSoql += ' FROM Account WHERE Id in ' + C501_MassMerge_SharedCode.GetSafeSoqlList(accountsMergeIds);
-        strSoql += ' order by C501_Merge_Metric_Name__c ASC NULLS FIRST';       
-        strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumCollectionSize());
-        
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql3: ' + strSoql);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
 
-        listAccounts = Database.Query(strSoql);
+            Account listRecord = AccountMap.get(mergeRecord.Account__c).clone(false, false, false, false);
+            listRecord.C501_Merge_Id__c = mergeRecord.Id;
+            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+            listRecord.C501_Merge_Account__c = mergeRecord.Account__c;
+            listRecord.C501_Merge_Target__c = mergeRecord.Merge_Target_Account__c;
+            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+            listAccounts.add(listRecord);
 
-        for ( Account account :listAccounts ) {
-            if (accountsMerge.containsKey(account.Id)) {
-                C501_Account_Merge__c mergeAccount = accountsMerge.get(account.Id);
-                account.C501_Merge_Id__c = mergeAccount.Id;
-                account.C501_Merge_Action__c = mergeAccount.Merge_Action__c;
-                account.C501_Merge_Confidence__c = mergeAccount.Merge_Confidence__c;
-                account.C501_Merge_Account__c = mergeAccount.Account__c;
-                account.C501_Merge_Target__c = mergeAccount.Merge_Target_Account__c;
-                account.C501_Merge_Metric_Name__c = mergeAccount.Merge_Metric_Name__c;
-                account.C501_Merge_Metric__c = mergeAccount.Merge_Metric__c;
-            }
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+
+            // Switch Master and Duplicate
+            listRecord = AccountMap.get(mergeRecord.Merge_Target_Account__c).clone(false, false, false, false);
+            listRecord.C501_Merge_Id__c = mergeRecord.Id;
+            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+            listRecord.C501_Merge_Account__c = mergeRecord.Merge_Target_Account__c;
+            listRecord.C501_Merge_Target__c = mergeRecord.Account__c;
+            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+            listAccounts.add(listRecord);
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
         }
-
-        // Update Accounts w/ Merge fields then query to get the correct sort order by Metric Name
-        Database.SaveResult[] updateResults = Database.update(listAccounts, false);
-        for (Database.SaveResult updateResult :updateResults) {
-            if (!updateResult.isSuccess()) {
-                for(Database.Error resultError : updateResult.getErrors()) {
-                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts');
-                }                        
-            }
-        }
-
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts strSoql4: ' + strSoql);
-        listAccounts = Database.Query(strSoql);
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
-    }
-    
-    // used to track the Id's of all Account records that get modified.
-    public Set<ID> setAccountsIdDirty {
-        get {
-            if (setAccountsIdDirty == null) {
-                setAccountsIdDirty = new Set<ID>();
-            }
-            return setAccountsIdDirty;
-        }
-        set;
-    }
-    
-    // to allow vf page to see how many Account records are dirty
-    public Integer numberOfRecordsDirty {
-        get { 
-            if (setAccountsIdDirty == null)
-                return 0;
-            else
-                return setAccountsIdDirty.size();
-        }
-    }
-    
-    // this gets called whenever a field in the Accounts datatable is modified.
-    // use this to remember which existing Accounts records have been modified.
-    public virtual PageReference AccountsRecordModified() {
-        String strId = ApexPages.currentPage().getParameters().get('usersIdDirtied');
-        if (strId != null && strId != '') setAccountsIdDirty.add(strId);
-        return null;
     }
     
     public Account getTargetMerge(Account masterObject)
@@ -468,10 +364,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::SaveAccounts Master Check Merge Action - Merge Rule: ' + account.C501_Merge_Metric_Name__c);
 
-                    // we couldn't reliably mark dirty records in all scenarios,
-                    // so we've decided it is better to always update all records.
-                    //if (setAccountsIdDirty.contains(account.Id)) 
-
                     if (!listAccountsMergesMaster.containsKey(account.C501_Merge_Id__c)) {
 
                         Account targetObject = getTargetMerge(account);
@@ -494,10 +386,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                 else if (account.Id != null && account.C501_Merge_Action__c == 'Ignore') {
 
                     C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::SaveAccounts Ignore Check Merge Action - Merge Rule: ' + account.C501_Merge_Metric_Name__c);
-
-                    // we couldn't reliably mark dirty records in all scenarios,
-                    // so we've decided it is better to always update all records.
-                    //if (setAccountsIdDirty.contains(account.Id)) 
 
                     if (!listAccountsMergesIgnore.containsKey(account.C501_Merge_Id__c)) {
 
@@ -548,9 +436,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             strSaveResults = ( (mergesIgnoreSize + mergesMasterSize) * 2) + ' ' + Label.Merge_labelMassMergeSaveSuccess;
             ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.CONFIRM, strSaveResults));
 
-            // successful save, so clear out dirty list
-            setAccountsIdDirty = null;
-
             // Refresh Account and Account Table
             ResetAccounts();
 
@@ -571,27 +456,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         }
     }
 
-    //save the Accounts modified, and then close the page.
-    public virtual PageReference SaveAndCloseAccounts() {
-        SaveAccounts();
-        if (ApexPages.hasMessages(ApexPages.Severity.ERROR) ||
-           ApexPages.hasMessages(ApexPages.Severity.FATAL) ||
-            ApexPages.hasMessages(ApexPages.Severity.WARNING)) {
-                return null; // don't close window.
-        }
-        return Cancel();    
-    }
-    
-    // user wants to close this page
-    public virtual PageReference Cancel() {
-        // figure out which object to return to.
-        idRedirect = objectFilter.Id;
-        
-        // trigger our redirect component to redirect using javascript.
-        redirect = true;
-        return null;
-    }
-    
     // this was a which can't be compiled in this class under api 31.  
     // but because it was marked public, it could not be completely removed.
     public static void CodeCoverageTests() {}
