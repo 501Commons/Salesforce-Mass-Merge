@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Mass Merge</fullName>
     <types>
         <members>C501_CTRL_MassMergeAccounts</members>
         <members>C501_CTRL_MassMergeAccounts_TEST</members>
@@ -151,6 +150,7 @@
         <members>Mass_Merge_Config__c.Enable_Error_Logging__c</members>
         <members>Mass_Merge_Config__c.Log_Filter__c</members>
         <members>Mass_Merge_Config__c.Maximum_Discover_Having_Count__c</members>
+        <members>Mass_Merge_Config__c.Maximum_Records_Display__c</members>
         <members>Mass_Merge_Config__c.Maximum_Salesforce_Limits_to_Use__c</members>
         <members>Mass_Merge_Config__c.Merge_History_Write_All__c</members>
         <members>Merge_Query__c.IsTest__c</members>

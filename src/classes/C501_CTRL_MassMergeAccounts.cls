@@ -278,8 +278,14 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             AccountsMergeIds.add(AccountMerge.Account__c);
             AccountsMergeIds.add(AccountMerge.Merge_Target_Account__c);
 
-            // Max collection size check for at least half because merge candidates generate double the Contact records (checking for more because hitting View State Size Limit)
-            if (mergeIndex >= (C501_MassMerge_SharedCode.SALESFORCE_MAXIMUM_COLLECTION_SIZE / 3)) {
+            Integer maxRecordsDisplay = C501_MassMerge_SharedCode.SALESFORCE_MAXIMUM_COLLECTION_SIZE;
+            Mass_Merge_Config__c massMergeConfigSettings = Mass_Merge_Config__c.getOrgDefaults();
+            if (massMergeConfigSettings <> null && massMergeConfigSettings.Maximum_Records_Display__c > 0.0 && massMergeConfigSettings.Maximum_Records_Display__c <> maxRecordsDisplay) {
+                maxRecordsDisplay = Integer.valueOf(massMergeConfigSettings.Maximum_Records_Display__c);
+            }   
+
+            // Max records display size check - get a View State Size Limit if records size exceeds limit
+            if (mergeIndex >= maxRecordsDisplay) {
                 ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.WARNING, 'Maximum records exceeded so loading a subset of the total merge candidates.  Try adding Filter by Contact or Filter by Rule criteria if you are having trouble finding a specific merge candidate.'));
                 break;
             }

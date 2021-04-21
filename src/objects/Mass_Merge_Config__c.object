@@ -70,6 +70,20 @@
         <unique>false</unique>
     </fields>
     <fields>
+        <fullName>Maximum_Records_Display__c</fullName>
+        <defaultValue>750</defaultValue>
+        <description>Maximum number of records to display on the merge candidates pages</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Maximum number of records to display on the merge candidates pages</inlineHelpText>
+        <label>Maximum Records Display</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <trackTrending>false</trackTrending>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
         <fullName>Maximum_Salesforce_Limits_to_Use__c</fullName>
         <defaultValue>65</defaultValue>
         <description>Maximum percentage of Salesforce Limits (e.g., SOQL Queries, CPU Time) to use for a given execution cycle.</description>
