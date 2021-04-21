@@ -24,8 +24,3 @@ tasks:
         options:
             path: robot/Salesforce-Mass-Merge/tests
             output: robot/Salesforce-Mass-Merge/doc/Salesforce-Mass-Merge_tests.html
-
-flows:
-    config_qa:
-        1.1:
-            task: deploy_qa_config
