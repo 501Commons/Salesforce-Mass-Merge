@@ -304,6 +304,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
 
             Contact listRecord = contactMap.get(mergeRecord.Contact__c).clone(false, false, false, false);
+            listRecord.Id = mergeRecord.Contact__c;
             listRecord.C501_Merge_Id__c = mergeRecord.Id;
             listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
             listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
@@ -313,10 +314,11 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
             listContacts.add(listRecord);
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c + ' Id: ' + listRecord.Id);
 
             // Switch Master and Duplicate
             listRecord = contactMap.get(mergeRecord.Merge_Target_Contact__c).clone(false, false, false, false);
+            listRecord.Id = mergeRecord.Merge_Target_Contact__c;
             listRecord.C501_Merge_Id__c = mergeRecord.Id;
             listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
             listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
@@ -326,7 +328,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
             listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
             listContacts.add(listRecord);
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c + ' Id: ' + listRecord.Id);
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();

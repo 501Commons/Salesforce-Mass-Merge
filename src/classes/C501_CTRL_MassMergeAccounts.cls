@@ -303,6 +303,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
 
             Account listRecord = AccountMap.get(mergeRecord.Account__c).clone(false, false, false, false);
+            listRecord.Id = mergeRecord.Account__c;
             listRecord.C501_Merge_Id__c = mergeRecord.Id;
             listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
             listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
@@ -316,6 +317,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
             // Switch Master and Duplicate
             listRecord = AccountMap.get(mergeRecord.Merge_Target_Account__c).clone(false, false, false, false);
+            listRecord.Id = mergeRecord.Merge_Target_Account__c;
             listRecord.C501_Merge_Id__c = mergeRecord.Id;
             listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
             listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
