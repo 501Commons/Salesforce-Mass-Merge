@@ -71,7 +71,7 @@
     </fields>
     <fields>
         <fullName>Maximum_Records_Display__c</fullName>
-        <defaultValue>750</defaultValue>
+        <defaultValue>250</defaultValue>
         <description>Maximum number of records to display on the merge candidates pages</description>
         <externalId>false</externalId>
         <inlineHelpText>Maximum number of records to display on the merge candidates pages</inlineHelpText>
