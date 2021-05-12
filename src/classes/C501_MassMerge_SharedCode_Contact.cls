@@ -625,7 +625,7 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                             writeHistoryRecord = writeAllMergeHistoryFields;
 
                             try{
-                                masterObjectQuery.put(fieldName, objectItem.get(fieldName));
+                                masterObjectQuery.put(fieldName, duplicateFieldValue);
                                 mergeAction = mergeActionUse;
                             } catch (Exception e) {
                                 C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
