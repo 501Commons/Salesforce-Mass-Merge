@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Mass Merge</fullName>
     <types>
         <members>C501_CTRL_MassMergeAccounts</members>
         <members>C501_CTRL_MassMergeAccounts_TEST</members>
@@ -8,6 +7,10 @@
         <members>C501_CTRL_MassMergeContacts_TEST</members>
         <members>C501_MM_Action_Controller</members>
         <members>C501_MM_Action_Controller_TEST</members>
+        <members>C501_MM_ListView_AccountM_CTRL</members>
+        <members>C501_MM_ListView_AccountM_CTRL_TEST</members>
+        <members>C501_MM_ListView_ContactM_CTRL</members>
+        <members>C501_MM_ListView_ContactM_CTRL_TEST</members>
         <members>C501_MM_ListView_Controller</members>
         <members>C501_MM_ListView_Controller_TEST</members>
         <members>C501_MM_Process_Merge_Queries</members>
@@ -44,6 +47,10 @@
         <members>C501_MassMergeAccounts</members>
         <members>C501_MassMergeContacts</members>
         <members>C501_MassMergeListView</members>
+        <members>C501_MassMergeListView_AccountM_Ignore</members>
+        <members>C501_MassMergeListView_AccountM_Merge</members>
+        <members>C501_MassMergeListView_ContactM_Ignore</members>
+        <members>C501_MassMergeListView_ContactM_Merge</members>
         <members>C501_MassMergeListViewContacts</members>
         <members>C501_MassMergeListViewMerge</members>
         <name>ApexPage</name>

@@ -139,6 +139,10 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
         for (C501_Account_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere)) {
 
+            if (mapSelectOption.size() > C501_MassMerge_SharedCode.MAXIMUM_COLLECTION_SIZE) {
+                break;
+            }
+
             mapSelectOption.put(
                 mergeRecord.Account__r.Name,
                 new SelectOption(mergeRecord.Account__r.Name, mergeRecord.Account__r.Name));

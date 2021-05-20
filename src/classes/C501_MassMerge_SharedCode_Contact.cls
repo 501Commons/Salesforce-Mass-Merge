@@ -139,6 +139,10 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
         for (C501_Contact_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere)) {
 
+            if (mapSelectOption.size() > C501_MassMerge_SharedCode.MAXIMUM_COLLECTION_SIZE) {
+                break;
+            }
+
             mapSelectOption.put(
                 mergeRecord.Contact__r.Name,
                 new SelectOption(mergeRecord.Contact__r.Name, mergeRecord.Contact__r.Name));

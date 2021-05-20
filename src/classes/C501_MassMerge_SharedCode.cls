@@ -34,6 +34,9 @@ public without sharing class C501_MassMerge_SharedCode {
 
     public static final Integer INCREMENT_MERGE_CANDIDATE_GROUPBY = 5;
     public static final Integer SALESFORCE_MAXIMUM_COLLECTION_SIZE = 250;
+
+    // Actual Maximum Collection Size is 1000
+    public static final Integer MAXIMUM_COLLECTION_SIZE = 990;
     
     // Available Fields for merging
     //
