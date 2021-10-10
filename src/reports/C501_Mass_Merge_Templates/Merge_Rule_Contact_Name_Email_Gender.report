@@ -9,11 +9,8 @@
     <columns>
         <field>EMAIL</field>
     </columns>
-    <columns>
-        <field>Contact.Gender__c</field>
-    </columns>
     <format>Tabular</format>
-    <name>Merge Rule Contact Name, Email, Gender</name>
+    <name>Merge Rule Contact Name, Email</name>
     <params>
         <name>co</name>
         <value>1</value>

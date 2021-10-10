@@ -479,9 +479,9 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
             //      Step 3: Attempt to update unique values on the master
             if (fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
 
-                // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
+                // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field so throws a Duplicate Set exception when updating record
+                //  Real fix is to remove the Gender__c from the package but need to work with Salesforce support to remove objects/fields from a managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {
-                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Contact::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -600,6 +600,15 @@ public without sharing class C501_MassMerge_SharedCode_Contact {
                 String mergeActionIgnore = 'Ignore Duplicate';
                 String mergeActionUse = 'Use Duplicate';
                 String mergeActionError = 'Error';
+
+                // Same Id history so at least 1 record of the merge in history
+                insertMergeHistories.add(new C501_Merge_Contact_History__c(
+                    Contact__c = masterObjectQuery.Id,
+                    Merge_Value__c = masterObjectQuery.Id,
+                    Ignore_Value__c = String.valueOf(objectItem.get('Id')),
+                    Field__c =  'Id',
+                    Action__c = mergeActionIgnore
+                ));
 
                 for (String fieldName :fieldMap.keySet()) {
 

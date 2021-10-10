@@ -304,11 +304,6 @@ public class C501_MM_Rule_Discover {
         // Add Null checks
         for (String column :detailColumnsChecked) {
 
-            // Skip Null check on fields not required to uniquely group contacts
-            if (column.equalsIgnoreCase('gender__c')) {
-                continue;
-            }
-
             whereFields.add(column + ' <> null ');
         }
 
@@ -493,11 +488,6 @@ public class C501_MM_Rule_Discover {
  
         // Add Null checks
         for (String column :detailColumnsChecked) {
-
-            // Skip Null check on fields not required to uniquely group contacts
-            if (column.equalsIgnoreCase('gender__c')) {
-                continue;
-            }
 
             whereFields.add(column + ' <> null ');
         }

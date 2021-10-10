@@ -9,11 +9,8 @@
     <columns>
         <field>BIRTHDATE</field>
     </columns>
-    <columns>
-        <field>Contact.Gender__c</field>
-    </columns>
     <format>Tabular</format>
-    <name>Merge Rule Contact Name, DOB, Gender</name>
+    <name>Merge Rule Contact Name, DOB</name>
     <params>
         <name>co</name>
         <value>1</value>

@@ -23,11 +23,6 @@
             <isFieldManaged>false</isFieldManaged>
             <isRequired>false</isRequired>
         </displayedFields>
-        <displayedFields>
-            <field>Gender__c</field>
-            <isFieldManaged>false</isFieldManaged>
-            <isRequired>false</isRequired>
-        </displayedFields>
         <label>MassMergeContacts</label>
     </fieldSets>
     <fields>
@@ -175,7 +170,7 @@
     <fields>
         <fullName>Gender__c</fullName>
         <externalId>false</externalId>
-        <label>Gender</label>
+        <label>Gender (Obselete)</label>
         <required>false</required>
         <trackFeedHistory>false</trackFeedHistory>
         <type>Picklist</type>
@@ -183,39 +178,9 @@
             <valueSetDefinition>
                 <sorted>false</sorted>
                 <value>
-                    <fullName>Male</fullName>
+                    <fullName>Obselete</fullName>
                     <default>false</default>
-                    <label>Male</label>
-                </value>
-                <value>
-                    <fullName>Female</fullName>
-                    <default>false</default>
-                    <label>Female</label>
-                </value>
-                <value>
-                    <fullName>Other</fullName>
-                    <default>false</default>
-                    <label>Other</label>
-                </value>
-                <value>
-                    <fullName>No Response</fullName>
-                    <default>false</default>
-                    <label>No Response</label>
-                </value>
-                <value>
-                    <fullName>Queer</fullName>
-                    <default>false</default>
-                    <label>Queer</label>
-                </value>
-                <value>
-                    <fullName>Trans</fullName>
-                    <default>false</default>
-                    <label>Trans</label>
-                </value>
-                <value>
-                    <fullName>Prefer not to disclose</fullName>
-                    <default>false</default>
-                    <label>Prefer not to disclose</label>
+                    <label>Obselete</label>
                 </value>
             </valueSetDefinition>
         </valueSet>

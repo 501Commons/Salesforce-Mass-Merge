@@ -204,7 +204,6 @@ public without sharing class C501_MassMerge_SharedCode {
             Database.delete(deleteDebugLogs, false);
         }
 
-
         if (!insertDebugLogs.isEmpty()) {
 
             Boolean insertError = false;
@@ -798,8 +797,7 @@ public without sharing class C501_MassMerge_SharedCode {
                 FirstName = 'Fred',
                 AccountId = listAccounts[i].Id,
                 Birthdate = date.today().addYears(-21),
-                Email = 'fred@bedrock.org',
-                Gender__c = 'Male'
+                Email = 'fred@bedrock.org'
             ));
 
             listContacts.add( new Contact(
@@ -807,8 +805,7 @@ public without sharing class C501_MassMerge_SharedCode {
                 FirstName = 'Fred',
                 AccountId = listAccounts[i].Id,
                 Birthdate = date.today().addYears(-21),
-                Email = 'fred@bedrock.org',
-                Gender__c = 'Male'
+                Email = 'fred@bedrock.org'
             ));
 
             listContacts.add( new Contact(
@@ -816,8 +813,7 @@ public without sharing class C501_MassMerge_SharedCode {
                 FirstName = 'Wilma',
                 AccountId = listAccounts[i].Id,
                 Birthdate = date.today().addYears(-21),
-                Email = 'wilma@bedrock.org',
-                Gender__c = 'Female'
+                Email = 'wilma@bedrock.org'
             ));
         }
 
