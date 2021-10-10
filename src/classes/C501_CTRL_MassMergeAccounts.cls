@@ -115,8 +115,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
             if (listSOAccounts == null )
                 listSOAccounts = c501MassMerge_SharedCode_Account.ListObjectsWithConfidence(objectFilter.C501_Merge_Rule__c, objectFilter.C501_Merge_Confidence_From__c, objectFilter.C501_Merge_Confidence_To__c);
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::listSOAccounts listSOAccounts size: ' + String.valueOf(listSOAccounts.size()));
-
             return listSOAccounts;
         }
 
@@ -197,8 +195,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
     // the user has changed the Rule dropdown
     public virtual PageReference ChangeRule() {
-
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::ChangeRule');
 
         listSOAccounts = null;
         listAccounts = null;
@@ -308,32 +304,39 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
 
-            Account listRecord = AccountMap.get(mergeRecord.Account__c).clone(false, false, false, false);
-            listRecord.Id = mergeRecord.Account__c;
-            listRecord.C501_Merge_Id__c = mergeRecord.Id;
-            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
-            listRecord.C501_Merge_Account__c = mergeRecord.Account__c;
-            listRecord.C501_Merge_Target__c = mergeRecord.Merge_Target_Account__c;
-            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
-            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
-            listAccounts.add(listRecord);
+            try {
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+                Account listRecord1 = AccountMap.get(mergeRecord.Account__c).clone(false, false, false, false);
+                listRecord1.Id = mergeRecord.Account__c;
+                listRecord1.C501_Merge_Id__c = mergeRecord.Id;
+                listRecord1.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+                listRecord1.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+                listRecord1.C501_Merge_Account__c = mergeRecord.Account__c;
+                listRecord1.C501_Merge_Target__c = mergeRecord.Merge_Target_Account__c;
+                listRecord1.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+                listRecord1.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
 
-            // Switch Master and Duplicate
-            listRecord = AccountMap.get(mergeRecord.Merge_Target_Account__c).clone(false, false, false, false);
-            listRecord.Id = mergeRecord.Merge_Target_Account__c;
-            listRecord.C501_Merge_Id__c = mergeRecord.Id;
-            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
-            listRecord.C501_Merge_Account__c = mergeRecord.Merge_Target_Account__c;
-            listRecord.C501_Merge_Target__c = mergeRecord.Account__c;
-            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
-            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
-            listAccounts.add(listRecord);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord1 Name: ' + listRecord1.C501_Merge_Metric_Name__c);
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c);
+                // Switch Master and Duplicate
+                Account listRecord2 = AccountMap.get(mergeRecord.Merge_Target_Account__c).clone(false, false, false, false);
+                listRecord2.Id = mergeRecord.Merge_Target_Account__c;
+                listRecord2.C501_Merge_Id__c = mergeRecord.Id;
+                listRecord2.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+                listRecord2.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+                listRecord2.C501_Merge_Account__c = mergeRecord.Merge_Target_Account__c;
+                listRecord2.C501_Merge_Target__c = mergeRecord.Account__c;
+                listRecord2.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+                listRecord2.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListAccounts listRecord2 Name: ' + listRecord2.C501_Merge_Metric_Name__c);
+
+                listAccounts.add(listRecord1);
+                listAccounts.add(listRecord2);
+            }
+            catch (Exception ex) {
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeAccounts::FillListAccounts listAccounts skipping merge record since exception when accessing - ' + ex.getMessage());
+            }
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();

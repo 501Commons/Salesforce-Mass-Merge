@@ -143,6 +143,18 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 break;
             }
 
+            try {
+
+                if (String.isBlank(mergeRecord.Account__c) || String.isBlank(mergeRecord.Account__r.Name) || String.isBlank(mergeRecord.Merge_Target_Account__c) || String.isBlank(mergeRecord.Merge_Target_Account__r.Name)) {
+                    continue;
+                }
+            }
+            catch(Exception ex) {
+
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence Invalid Lookup values to skip - ' + ex.getMessage());
+                continue;
+            }
+
             mapSelectOption.put(
                 mergeRecord.Account__r.Name,
                 new SelectOption(mergeRecord.Account__r.Name, mergeRecord.Account__r.Name));
@@ -432,7 +444,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
     }
 
-    public void ObjectsFieldMerge(Account masterObject, List<Account> duplicateObjects) {
+    public Account ObjectsFieldMerge(Account masterObject, List<Account> duplicateObjects) {
 
         Set<Id> mergeCandidates = new Set<Id> { masterObject.Id };
         for (Account objectItem :duplicateObjects) {
@@ -460,12 +472,16 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             }
 */
 
-            // Only include the fields which are updateable and accessible and not hidden, unique, or externalid
+            // Only include the fields which are updateable and accessible and not unique or hidden
+            //  externalId is fine as long as not a unique externalId
+            //      Step 1: Update all master records while excluding unqiue value
+            //      Step 2: Merge the duplicate into the master (thus deleting the duplicate)
+            //      Step 3: Attempt to update unique values on the master
             if (fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
 
                 // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field - ToDo: Remove Gender__c from this managed package
                 if (fieldName.toLowerCase().contains('gender__c')) {
-                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - skip duplicate field: ' + fieldName + ' strSoql: ' + strSoql);
                     continue;
                 }
 
@@ -474,19 +490,24 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 if (String.isBlank(relName)) {
                     strSoql += (fieldName + ',');
                 } else {
-                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
+                    //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - skip relationship field: ' + fieldName + ' relName: ' + relName + ' fResult: ' + fResult);
                     continue;
                 }
 
                 fieldMap.put(fieldName, fResult);
             }
             else {
-                //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
+                //C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - skip field based on fResult: ' + fieldName + ' fResult: ' + fResult);
             }
         }
 
         strSoql += ' Id FROM Account WHERE Id IN ' + C501_MassMerge_SharedCode.GetSafeSoqlList(mergeCandidates);
         strSoql += ' LIMIT ' + String.valueOf(C501_MassMerge_SharedCode.GetMaximumLimitSize(1));
+
+        // Master object to hold the Unique values for attempted update after the merge
+        Account masterUniqueObjectQuery = new Account(
+            Id = masterObject.Id
+        );
         
         List<Account> objectList;
         try {
@@ -496,9 +517,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
             if (objectList == null || objectList.size() != mergeCandidates.size()) {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to return expected number of objects');
-
-                return;
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge Query failed to return expected number of objects');
+                return null;
             }
 
             // Get the Master Query Object
@@ -514,9 +534,8 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             // Ensure we got back the same number of records as expected. In case any record got deleted/moved since last search.
             if (masterObjectQuery == null) {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Query failed to find the master record fields');
-
-                return;
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge Query failed to find the master record fields');
+                return null;
             }
 
             List<C501_Merge_Account_History__c> insertMergeHistories = new List<C501_Merge_Account_History__c>();
@@ -541,21 +560,22 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     for (String addressType :C501_MassMerge_SharedCode_Object.AddressTypesAvailable) {
                         for (String addressField :C501_MassMerge_SharedCode_Object.AddressFieldsAvailable) {
 
-                            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - check address field: ' + addressType + addressField);
+                            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - check address field: ' + addressType + addressField);
 
                             try {
                                 if (masterObjectQuery.get(addressType + addressField) != null &&
                                     !String.isBlank(String.valueOf(masterObjectQuery.get(addressType + addressField)))) {
 
-                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - skip address field: ' + addressType + addressField);
 
                                     addressTypesSkip.add(addressType);
                                     break;
                                 }
                             }
                             catch (Exception e) {
+                                
                                 if (!e.getMessage().contains('Invalid field')) {
-                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge check address field exception: ' + String.valueOf(e.getMessage()));
+                                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge check address field exception: ' + String.valueOf(e.getMessage()));
                                 }
                             }
                         }
@@ -565,7 +585,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 }
             }
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - addressTypesSkip: ' + addressTypesSkip);
 
             Mass_Merge_Config__c massMergeConfigSettings = Mass_Merge_Config__c.getOrgDefaults();
             Boolean writeAllMergeHistoryFields = massMergeConfigSettings == null ? false : massMergeConfigSettings.Merge_History_Write_All__c;
@@ -588,7 +608,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     String masterFieldValue = String.valueOf(masterObjectQuery.get(fieldName));
                     String duplicateFieldValue = String.valueOf(objectItem.get(fieldName));
 
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
+                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - fieldName: ' + fieldName + ' masterFieldValue: ' + masterFieldValue + ' duplicateFieldValue: ' + duplicateFieldValue);
 
                     // Handle Phone
                     //      Future Update: Change to if fieldName contains Phone and Datatype = Phone or can determine if a Phone field based on format? xxxx-xxx
@@ -610,7 +630,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                     for (String addressType : addressTypesSkip) {
                         for (String addressField : C501_MassMerge_SharedCode.AddressFieldsAvailable) {
                             if (fieldName.equalsIgnoreCase(addressType + addressField)) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge - skip address field: ' + fieldName);
+                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - skip address field: ' + fieldName);
                                 skipMasterFieldUpdate = true;
                             }
                         }
@@ -628,12 +648,26 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
                             writeHistoryRecord = writeAllMergeHistoryFields;
 
-                            try{
-                                masterObjectQuery.put(fieldName, duplicateFieldValue);
+                            try {
+
+                                if (fieldMap.get(fieldName).isUnique()) {
+
+                                    // Get Field directly from get call so proper Object type is used
+                                    masterUniqueObjectQuery.put(fieldName, objectItem.get(fieldName));
+
+                                } else {
+
+                                    // Get Field directly from get call so proper Object type is used
+                                    masterObjectQuery.put(fieldName, objectItem.get(fieldName));
+                                }
+
                                 mergeAction = mergeActionUse;
+
                             } catch (Exception e) {
-                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
+
+                                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge Update Merge Standard Field - fieldName: ' + fieldName + ' Exception: ' + String.valueOf(e.getMessage()));
                                 mergeAction = mergeActionError;
+                                return null;
                             }
                         }
                         else if (!String.isBlank(masterFieldValue) && !String.isBlank(duplicateFieldValue) && masterFieldValue <> duplicateFieldValue) {
@@ -663,9 +697,14 @@ public without sharing class C501_MassMerge_SharedCode_Account {
 
             Database.SaveResult updateResult = Database.update(masterObjectQuery, false);
             if (!updateResult.isSuccess()) {
+
                 for (Database.Error resultError : updateResult.getErrors()) {
+
                     C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsFieldMerge');
                 }
+
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge - Database.update: ' + updateResult);
+                return null;
             }
 
             if (!insertMergeHistories.isEmpty()) {
@@ -679,10 +718,13 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 }
             }
         } catch (Exception e) {
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsFieldMerge Update fields exception: ' + String.valueOf(e.getMessage()));
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsFieldMerge Update fields exception: ' + String.valueOf(e.getMessage()));
+            return null;
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
+        return masterUniqueObjectQuery;
     }
 
     public void ObjectsMerge(Account masterObject, List<Account> duplicateObjects) {
@@ -692,19 +734,38 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
 
         C501_MassMerge_SharedCode_Object.ObjectsMerge_Account(masterObject, duplicateObjects);
- 
-        // Merge fields into master
-        ObjectsFieldMerge(masterObject, duplicateObjects);
 
-        // Merge Accounts into master
-        Database.MergeResult[] objectResults = Database.merge(masterObject, duplicateObjects, false);
-        for(Database.MergeResult res : objectResults) {
-            if (!res.isSuccess()) {
-                for (Database.Error err : res.getErrors()) {
-                    C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode::ObjectsMerge Account Merge Exception: ' + err.getMessage());
+        // Merge fields into master
+        Account masterObjectUniqueValues = ObjectsFieldMerge(masterObject, duplicateObjects);
+        if (masterObjectUniqueValues <> null) {
+
+            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ObjectsMerge Account Merge Master: ' + masterObject.Id + ' Duplicate: ' + duplicateObjects[0].Id);
+
+            // Merge Accounts into master
+            Database.MergeResult[] objectResults = Database.merge(masterObject, duplicateObjects, false);
+            for(Database.MergeResult res : objectResults) {
+                if (!res.isSuccess()) {
+                    for (Database.Error err : res.getErrors()) {
+                        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsMerge Account Merge Exception: ' + err.getMessage());
+                    }
+
+                    throw new C501_MassMerge_SharedCode_AccountException('Account Merge Attempt - ' + String.valueOf(res.getErrors()));
+                }
+            }
+
+            // Attempt to update unique values since the duplicate object is now deleted
+            //  If any failures in here they can be ignored because just making an attempt to bring over Unique Values after the merge is already over
+            //      Could wrap all this in a transaction if need to unwind the whole thing.
+            //      If getting errors here then before the merge (or maybe can update the deleted duplicate or force delete on the record) recommend blank out the unique values on the duplicate but that might cause validation errors so we need to not rethrow any exceptions
+            Database.SaveResult updateResult = Database.update(masterObjectUniqueValues, false);
+            if (!updateResult.isSuccess()) {
+
+                for (Database.Error resultError : updateResult.getErrors()) {
+
+                    C501_MassMerge_SharedCode.LogDatabaseError(resultError, String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ObjectsMerge Unique Values');
                 }
 
-                throw new C501_MassMerge_SharedCode_AccountException('Account Merge Attempt - ' + String.valueOf(res.getErrors()));
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** C501_MassMerge_SharedCode_Account::ObjectsMerge Unique Values - Database.update: ' + updateResult);
             }
         }
 
@@ -728,5 +789,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ProcessObjectMerges Remove Invalid Account Merges: ' + deleteAccountMerges);
             Database.delete(deleteAccountMerges, false);
         }
+
+        C501_MassMerge_SharedCode.OutputDebugLogFlush();
    }
 }

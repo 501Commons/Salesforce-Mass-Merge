@@ -159,16 +159,6 @@ public without sharing class C501_MassMerge_SharedCode {
 
         String statusCode = String.valueOf(resultError.getStatusCode());
 
-        // Ignore UNABLE_TO_LOCK_ROW because can happen with all the event firing - performance issue later to try an figure it out
-        if (statusCode.contains('UNABLE_TO_LOCK_ROW')) {
-//            return false;
-        }
-
-        // Ignore DUPLICATE_VALUE because just trying to insert and not checking if already there to reduce SOQL calls - let the DB block
-        if (statusCode.contains('DUPLICATE_VALUE')) {
-            return false;
-        }
-
         // Sandbox ignore the INVALID_CROSS_REFERENCE_KEY expection because there is partial data in Sandbox
         if (C501_MassMerge_SharedCode.IsSandbox && (statusCode.contains('INVALID_CROSS_REFERENCE_KEY') || statusCode.contains('INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY'))) {
             return false;

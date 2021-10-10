@@ -161,6 +161,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
 
             return fieldSetCheck;
         }
+        
         set;
     }
 
@@ -309,32 +310,39 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
 
             C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts mergeRecord Name: ' + mergeRecord.Merge_Metric_Name__c);
 
-            Contact listRecord = contactMap.get(mergeRecord.Contact__c).clone(false, false, false, false);
-            listRecord.Id = mergeRecord.Contact__c;
-            listRecord.C501_Merge_Id__c = mergeRecord.Id;
-            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
-            listRecord.C501_Merge_Contact__c = mergeRecord.Contact__c;
-            listRecord.C501_Merge_Target__c = mergeRecord.Merge_Target_Contact__c;
-            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
-            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
-            listContacts.add(listRecord);
+            try {
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c + ' Id: ' + listRecord.Id);
+                Contact listRecord1 = contactMap.get(mergeRecord.Contact__c).clone(false, false, false, false);
+                listRecord1.Id = mergeRecord.Contact__c;
+                listRecord1.C501_Merge_Id__c = mergeRecord.Id;
+                listRecord1.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+                listRecord1.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+                listRecord1.C501_Merge_Contact__c = mergeRecord.Contact__c;
+                listRecord1.C501_Merge_Target__c = mergeRecord.Merge_Target_Contact__c;
+                listRecord1.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+                listRecord1.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
 
-            // Switch Master and Duplicate
-            listRecord = contactMap.get(mergeRecord.Merge_Target_Contact__c).clone(false, false, false, false);
-            listRecord.Id = mergeRecord.Merge_Target_Contact__c;
-            listRecord.C501_Merge_Id__c = mergeRecord.Id;
-            listRecord.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-            listRecord.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
-            listRecord.C501_Merge_Contact__c = mergeRecord.Merge_Target_Contact__c;
-            listRecord.C501_Merge_Target__c = mergeRecord.Contact__c;
-            listRecord.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
-            listRecord.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
-            listContacts.add(listRecord);
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord1 Name: ' + listRecord1.C501_Merge_Metric_Name__c + ' Id: ' + listRecord1.Id);
 
-            C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord Name: ' + listRecord.C501_Merge_Metric_Name__c + ' Id: ' + listRecord.Id);
+                // Switch Master and Duplicate
+                Contact listRecord2 = contactMap.get(mergeRecord.Merge_Target_Contact__c).clone(false, false, false, false);
+                listRecord2.Id = mergeRecord.Merge_Target_Contact__c;
+                listRecord2.C501_Merge_Id__c = mergeRecord.Id;
+                listRecord2.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
+                listRecord2.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
+                listRecord2.C501_Merge_Contact__c = mergeRecord.Merge_Target_Contact__c;
+                listRecord2.C501_Merge_Target__c = mergeRecord.Contact__c;
+                listRecord2.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
+                listRecord2.C501_Merge_Metric__c = mergeRecord.Merge_Metric__c;
+
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::FillListContacts listRecord2 Name: ' + listRecord2.C501_Merge_Metric_Name__c + ' Id: ' + listRecord2.Id);
+
+                listContacts.add(listRecord1);
+                listContacts.add(listRecord2);
+            }
+            catch (Exception ex) {
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::FillListContacts listContacts skipping merge record since exception when accessing - ' + ex.getMessage());
+            }
         }
 
         C501_MassMerge_SharedCode.OutputDebugLogFlush();
