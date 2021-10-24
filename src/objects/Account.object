@@ -72,39 +72,6 @@
         </valueSet>
     </fields>
     <fields>
-        <fullName>C501_Merge_Confidence_From__c</fullName>
-        <externalId>false</externalId>
-        <label>Merge Confidence From</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackFeedHistory>false</trackFeedHistory>
-        <trackHistory>false</trackHistory>
-        <type>Percent</type>
-    </fields>
-    <fields>
-        <fullName>C501_Merge_Confidence_To__c</fullName>
-        <externalId>false</externalId>
-        <label>Merge Confidence To</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackFeedHistory>false</trackFeedHistory>
-        <trackHistory>false</trackHistory>
-        <type>Percent</type>
-    </fields>
-    <fields>
-        <fullName>C501_Merge_Confidence__c</fullName>
-        <externalId>false</externalId>
-        <label>Confidence</label>
-        <precision>4</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackFeedHistory>false</trackFeedHistory>
-        <trackHistory>false</trackHistory>
-        <type>Percent</type>
-    </fields>
-    <fields>
         <fullName>C501_Merge_Criteria_All_Contacts_Match__c</fullName>
         <defaultValue>false</defaultValue>
         <externalId>false</externalId>

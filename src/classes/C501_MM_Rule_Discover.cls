@@ -94,7 +94,7 @@ public class C501_MM_Rule_Discover {
         }
 
         List<Report> reports = [
-            SELECT Id, DeveloperName, FolderName, LastModifiedDate
+            SELECT Id, Name, DeveloperName, FolderName, LastModifiedDate
             FROM Report
             WHERE Id in :sourceReportIds OR DeveloperName in :sourceReportIds];
 
@@ -490,6 +490,11 @@ public class C501_MM_Rule_Discover {
         for (String column :detailColumnsChecked) {
 
             whereFields.add(column + ' <> null ');
+        }
+
+        // Check to add Null check for additional GroupByField (e.g., AccountId)
+        if (String.isNotBlank(additionalGroupByField) && !detailColumnsChecked.contains(additionalGroupByField)) {
+            whereFields.add(additionalGroupByField + ' <> null ');
         }
 
         // Add filters
@@ -1213,6 +1218,7 @@ public class C501_MM_Rule_Discover {
         }
 
         String checkedValue = (value.isNumeric() ? value : ('\'' + value + '\''));
+        checkedValue = String.isBlank(value) ? 'null' : checkedValue;
 
         if (operator.equalsIgnoreCase('equals')) {
             return columnName + ' = ' + checkedValue;

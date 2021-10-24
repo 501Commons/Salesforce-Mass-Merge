@@ -85,32 +85,6 @@
         <visibleLines>4</visibleLines>
     </fields>
     <fields>
-        <fullName>AutoMerge_Percentage__c</fullName>
-        <defaultValue>100.0</defaultValue>
-        <description>Automerge Percentage to use when determining the threshold to automatically merge any merge candidates.  Automerging happens when the Automerge Percentage is less than or equal to the merge candidate confidence percentage.</description>
-        <externalId>false</externalId>
-        <inlineHelpText>Percent value when a merge candidate is automatically merged.</inlineHelpText>
-        <label>AutoMerge Percentage</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackTrending>false</trackTrending>
-        <type>Percent</type>
-    </fields>
-    <fields>
-        <fullName>Confidence__c</fullName>
-        <defaultValue>90.0</defaultValue>
-        <description>Initial confidence percentage for merge candidates found by the merge rule.</description>
-        <externalId>false</externalId>
-        <inlineHelpText>Default merge candidate confidence percentage</inlineHelpText>
-        <label>Confidence</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackTrending>false</trackTrending>
-        <type>Percent</type>
-    </fields>
-    <fields>
         <fullName>Description__c</fullName>
         <externalId>false</externalId>
         <label>Description</label>
@@ -118,16 +92,6 @@
         <trackTrending>false</trackTrending>
         <type>LongTextArea</type>
         <visibleLines>3</visibleLines>
-    </fields>
-    <fields>
-        <fullName>Discover_AutoMerge_Objects_Only__c</fullName>
-        <defaultValue>false</defaultValue>
-        <description>Only discover potential merge candidates based on the auto-merge object(s) selected.</description>
-        <externalId>false</externalId>
-        <inlineHelpText>Only discover potential merge candidates based on the auto-merge object(s) selected.</inlineHelpText>
-        <label>Auto-Merge Object(s) Discovery Only</label>
-        <trackTrending>false</trackTrending>
-        <type>Checkbox</type>
     </fields>
     <fields>
         <fullName>Discovery_Objects__c</fullName>
@@ -160,26 +124,6 @@
             </valueSetDefinition>
         </valueSet>
         <visibleLines>3</visibleLines>
-    </fields>
-    <fields>
-        <fullName>Enable_Account_Merge_Discovery__c</fullName>
-        <defaultValue>true</defaultValue>
-        <description>When enabled, background processing will attempt to discover account merge candidates.</description>
-        <externalId>false</externalId>
-        <inlineHelpText>When enabled, background processing will attempt to discover account merge candidates.</inlineHelpText>
-        <label>Enable Account Merge Discovery</label>
-        <trackTrending>false</trackTrending>
-        <type>Checkbox</type>
-    </fields>
-    <fields>
-        <fullName>Enable_Contact_Merge_Discovery__c</fullName>
-        <defaultValue>true</defaultValue>
-        <description>When enabled, background processing will attempt to discover contact merge candidates.</description>
-        <externalId>false</externalId>
-        <inlineHelpText>When enabled, background processing will attempt to discover contact merge candidates.</inlineHelpText>
-        <label>Enable Contact Merge Discovery</label>
-        <trackTrending>false</trackTrending>
-        <type>Checkbox</type>
     </fields>
     <fields>
         <fullName>Last_Account_Discover_GroupByHavingCount__c</fullName>
@@ -296,10 +240,10 @@
     </fields>
     <fields>
         <fullName>Source_Report__c</fullName>
-        <description>Report Unique Name used as the merge candidate criteria for this merge rule</description>
+        <description>Report Id used as the merge candidate criteria for this merge rule</description>
         <externalId>false</externalId>
-        <inlineHelpText>Report Unique Name used as the merge candidate criteria for this merge rule</inlineHelpText>
-        <label>Report Unique Name</label>
+        <inlineHelpText>Report Id used as the merge candidate criteria for this merge rule</inlineHelpText>
+        <label>Report Id</label>
         <length>80</length>
         <required>true</required>
         <trackTrending>false</trackTrending>

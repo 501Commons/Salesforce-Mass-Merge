@@ -4,10 +4,6 @@
         <application>C501_Mass_Merge</application>
         <visible>true</visible>
     </applicationVisibilities>
-    <applicationVisibilities>
-        <application>C501_Mass_Merge_Classic</application>
-        <visible>true</visible>
-    </applicationVisibilities>
     <classAccesses>
         <apexClass>C501_CTRL_MassMergeAccounts</apexClass>
         <enabled>true</enabled>
@@ -118,21 +114,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Account.C501_Merge_Confidence_From__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Account.C501_Merge_Confidence_To__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Account.C501_Merge_Confidence__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>Account.C501_Merge_Criteria_All_Contacts_Match__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -183,11 +164,6 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>C501_Account_Merge__c.Merge_Confidence__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>C501_Account_Merge__c.Merge_Metric_Name__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -199,11 +175,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>C501_Contact_Merge__c.Merge_Action__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>C501_Contact_Merge__c.Merge_Confidence__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -258,38 +229,13 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>C501_Merge_Metric__c.AutoMerge_Percentage__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>C501_Merge_Metric__c.Confidence__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>C501_Merge_Metric__c.Description__c</field>
         <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</field>
-        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>C501_Merge_Metric__c.Discovery_Objects__c</field>
         <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</field>
-        <readable>false</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>false</editable>
-        <field>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</field>
-        <readable>false</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
@@ -374,21 +320,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Contact.C501_Merge_Action__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Contact.C501_Merge_Confidence_From__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Contact.C501_Merge_Confidence_To__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Contact.C501_Merge_Confidence__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Mass Merge</fullName>
     <types>
         <members>C501_CTRL_MassMergeAccounts</members>
         <members>C501_CTRL_MassMergeAccounts_TEST</members>
@@ -62,7 +61,6 @@
     </types>
     <types>
         <members>C501_Mass_Merge</members>
-        <members>C501_Mass_Merge_Classic</members>
         <name>CustomApplication</name>
     </types>
     <types>
@@ -70,9 +68,6 @@
         <members>Account.C501_Household_Id__c</members>
         <members>Account.C501_Merge_Account__c</members>
         <members>Account.C501_Merge_Action__c</members>
-        <members>Account.C501_Merge_Confidence_From__c</members>
-        <members>Account.C501_Merge_Confidence_To__c</members>
-        <members>Account.C501_Merge_Confidence__c</members>
         <members>Account.C501_Merge_Criteria_All_Contacts_Match__c</members>
         <members>Account.C501_Merge_Id__c</members>
         <members>Account.C501_Merge_Metric_Name__c</members>
@@ -87,14 +82,12 @@
         <members>C501_Account_Merge_Member__c.Unique_Id__c</members>
         <members>C501_Account_Merge__c.Account__c</members>
         <members>C501_Account_Merge__c.Merge_Action__c</members>
-        <members>C501_Account_Merge__c.Merge_Confidence__c</members>
         <members>C501_Account_Merge__c.Merge_Metric_Name__c</members>
         <members>C501_Account_Merge__c.Merge_Metric__c</members>
         <members>C501_Account_Merge__c.Merge_Target_Account__c</members>
         <members>C501_Account_Merge__c.Unique_Id__c</members>
         <members>C501_Contact_Merge__c.Contact__c</members>
         <members>C501_Contact_Merge__c.Merge_Action__c</members>
-        <members>C501_Contact_Merge__c.Merge_Confidence__c</members>
         <members>C501_Contact_Merge__c.Merge_Metric_Name__c</members>
         <members>C501_Contact_Merge__c.Merge_Metric__c</members>
         <members>C501_Contact_Merge__c.Merge_Target_Contact__c</members>
@@ -115,13 +108,8 @@
         <members>C501_Merge_Contact_History__c.Merge_Value__c</members>
         <members>C501_Merge_Contact_History__c.User__c</members>
         <members>C501_Merge_Metric__c.AutoMerge_Objects__c</members>
-        <members>C501_Merge_Metric__c.AutoMerge_Percentage__c</members>
-        <members>C501_Merge_Metric__c.Confidence__c</members>
         <members>C501_Merge_Metric__c.Description__c</members>
-        <members>C501_Merge_Metric__c.Discover_AutoMerge_Objects_Only__c</members>
         <members>C501_Merge_Metric__c.Discovery_Objects__c</members>
-        <members>C501_Merge_Metric__c.Enable_Account_Merge_Discovery__c</members>
-        <members>C501_Merge_Metric__c.Enable_Contact_Merge_Discovery__c</members>
         <members>C501_Merge_Metric__c.Last_Account_Discover_GroupByHavingCount__c</members>
         <members>C501_Merge_Metric__c.Last_Contact_Discover_GroupByHavingCount__c</members>
         <members>C501_Merge_Metric__c.Last_ContactsAccount_Discover_Date__c</members>
@@ -141,9 +129,6 @@
         <members>Contact.C501_Household_Id__c</members>
         <members>Contact.C501_Mailing_Address__c</members>
         <members>Contact.C501_Merge_Action__c</members>
-        <members>Contact.C501_Merge_Confidence_From__c</members>
-        <members>Contact.C501_Merge_Confidence_To__c</members>
-        <members>Contact.C501_Merge_Confidence__c</members>
         <members>Contact.C501_Merge_Contact__c</members>
         <members>Contact.C501_Merge_Id__c</members>
         <members>Contact.C501_Merge_Metric_Name__c</members>
@@ -152,7 +137,6 @@
         <members>Contact.C501_Merge_Rule__c</members>
         <members>Contact.C501_Merge_Target__c</members>
         <members>Contact.C501_Other_Address__c</members>
-        <members>Contact.Gender__c</members>
         <members>Mass_Merge_Config__c.Batch_Contact_Merging__c</members>
         <members>Mass_Merge_Config__c.Disable_All_Services__c</members>
         <members>Mass_Merge_Config__c.Enable_Debug_Logging__c</members>
@@ -281,6 +265,10 @@
         <name>StaticResource</name>
     </types>
     <types>
+        <members>C501_Account_Merge__c.Ignore</members>
+        <members>C501_Account_Merge__c.Merge</members>
+        <members>C501_Contact_Merge__c.Ignore</members>
+        <members>C501_Contact_Merge__c.Merge</members>
         <members>C501_Merge_Metric__c.C501_ListView_Discover</members>
         <members>C501_Merge_Metric__c.C501_ListView_DiscoverContacts</members>
         <members>C501_Merge_Metric__c.C501_ListView_Merge</members>

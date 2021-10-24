@@ -77,16 +77,6 @@
         </valueSet>
     </fields>
     <fields>
-        <fullName>Merge_Confidence__c</fullName>
-        <externalId>false</externalId>
-        <label>Merge Confidence</label>
-        <precision>18</precision>
-        <required>false</required>
-        <scale>0</scale>
-        <trackTrending>false</trackTrending>
-        <type>Percent</type>
-    </fields>
-    <fields>
         <fullName>Merge_Metric_Name__c</fullName>
         <externalId>false</externalId>
         <label>Merge Metric Name</label>
@@ -147,17 +137,37 @@
     <searchLayouts>
         <customTabListAdditionalFields>Contact__c</customTabListAdditionalFields>
         <customTabListAdditionalFields>Merge_Target_Contact__c</customTabListAdditionalFields>
-        <customTabListAdditionalFields>Merge_Confidence__c</customTabListAdditionalFields>
         <lookupDialogsAdditionalFields>Contact__c</lookupDialogsAdditionalFields>
         <lookupDialogsAdditionalFields>Merge_Target_Contact__c</lookupDialogsAdditionalFields>
-        <lookupDialogsAdditionalFields>Merge_Confidence__c</lookupDialogsAdditionalFields>
         <searchFilterFields>Contact__c</searchFilterFields>
         <searchFilterFields>Merge_Target_Contact__c</searchFilterFields>
-        <searchFilterFields>Merge_Confidence__c</searchFilterFields>
         <searchResultsAdditionalFields>Contact__c</searchResultsAdditionalFields>
         <searchResultsAdditionalFields>Merge_Target_Contact__c</searchResultsAdditionalFields>
-        <searchResultsAdditionalFields>Merge_Confidence__c</searchResultsAdditionalFields>
     </searchLayouts>
     <sharingModel>ControlledByParent</sharingModel>
     <visibility>Public</visibility>
+    <webLinks>
+        <fullName>Ignore</fullName>
+        <availability>online</availability>
+        <displayType>massActionButton</displayType>
+        <height>600</height>
+        <linkType>page</linkType>
+        <masterLabel>Ignore</masterLabel>
+        <openType>sidebar</openType>
+        <page>C501_MassMergeListView_ContactM_Ignore</page>
+        <protected>false</protected>
+        <requireRowSelection>true</requireRowSelection>
+    </webLinks>
+    <webLinks>
+        <fullName>Merge</fullName>
+        <availability>online</availability>
+        <displayType>massActionButton</displayType>
+        <height>600</height>
+        <linkType>page</linkType>
+        <masterLabel>Merge</masterLabel>
+        <openType>sidebar</openType>
+        <page>C501_MassMergeListView_ContactM_Merge</page>
+        <protected>false</protected>
+        <requireRowSelection>true</requireRowSelection>
+    </webLinks>
 </CustomObject>

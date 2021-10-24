@@ -64,8 +64,7 @@ public class C501_MM_ListView_AccountM_CTRL_TEST {
                 Unique_Id__c = 'TESTDATA Name ' + listAccounts[0].Id,
                 Merge_Metric__c = mergeMetrics[0].Id,
                 Account__c = listAccounts[0].Id,
-                Merge_Target_Account__c = listAccounts[1].Id,
-                Merge_Confidence__c = 100.0);
+                Merge_Target_Account__c = listAccounts[1].Id);
 
         insert objectMerge;
 

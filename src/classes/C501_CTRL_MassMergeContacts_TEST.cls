@@ -86,7 +86,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
                 Merge_Metric__c = mergeMetrics[0].Id,
                 Contact__c = listContacts[0].Id,
                 Merge_Target_Contact__c = listContacts[1].Id,
-                Merge_Confidence__c = 100.0,
                 Merge_Action__c = 'Master');
 
         insert objectMerge;
@@ -129,7 +128,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
                 Merge_Metric__c = mergeMetrics[0].Id,
                 Contact__c = listContacts[0].Id,
                 Merge_Target_Contact__c = listContacts[1].Id,
-                Merge_Confidence__c = 100.0,
                 Merge_Action__c = 'Master');
 
         insert objectMerge;
@@ -244,7 +242,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
-            mergeMetric.AutoMerge_Percentage__c = 0.0;
             mergeMetric.AutoMerge_Objects__c = '';
         }
 
@@ -284,7 +281,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
             mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
-            mergeMetric.AutoMerge_Percentage__c = 0.0;
         }
 
         update mergeMetrics;
@@ -317,7 +313,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
         System.Assert(objectMergesBefore.size() > 0);
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
             mergeMetric.AutoMerge_Objects__c = '';
         }
 
@@ -358,7 +353,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
             mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
         update mergeMetrics;
@@ -397,7 +391,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
             mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
         update mergeMetrics;
@@ -436,7 +429,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
 
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
             mergeMetric.AutoMerge_Objects__c = autoMergeObjects;
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
         update mergeMetrics;
@@ -510,7 +502,6 @@ public class C501_CTRL_MassMergeContacts_TEST {
         for (C501_Merge_Metric__c mergeMetric :mergeMetrics) {
 
             mergeMetricIds.add(mergeMetric.Id);
-            mergeMetric.AutoMerge_Percentage__c = objectMergesBefore[0].Merge_Confidence__c;
         }
 
         update mergeMetrics;

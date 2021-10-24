@@ -75,9 +75,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
         if (!ListPartialContains(listStrFields, 'C501_Merge_Target__c')) {
             listStrFields.add('C501_Merge_Target__c');
         }
-        if (!ListPartialContains(listStrFields, 'C501_Merge_Confidence__c')) {
-            listStrFields.add('C501_Merge_Confidence__c');
-        }
     }   
     
     //
@@ -113,7 +110,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
     public List<SelectOption> listSOAccounts {
         get {
             if (listSOAccounts == null )
-                listSOAccounts = c501MassMerge_SharedCode_Account.ListObjectsWithConfidence(objectFilter.C501_Merge_Rule__c, objectFilter.C501_Merge_Confidence_From__c, objectFilter.C501_Merge_Confidence_To__c);
+                listSOAccounts = c501MassMerge_SharedCode_Account.ListObjects(objectFilter.C501_Merge_Rule__c);
 
             return listSOAccounts;
         }
@@ -176,8 +173,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                 objectFilter = new Account();
                 
                 objectFilter.C501_Merge_Rule__c = null;
-                objectFilter.C501_Merge_Confidence_From__c = 0.0;
-                objectFilter.C501_Merge_Confidence_To__c = 100.0;
             }
             return objectFilter;
         }
@@ -259,7 +254,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                 new C501_Account_Merge__c(
                     Id = AccountMerge.Id,
                     Merge_Action__c = AccountMerge.Merge_Action__c,
-                    Merge_Confidence__c = null,
                     Account__c = AccountMerge.Account__c,
                     Merge_Target_Account__c = AccountMerge.Merge_Target_Account__c,
                     Merge_Metric__c = AccountMerge.Merge_Metric__c,
@@ -282,7 +276,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
 
             // Max records display size check - get a View State Size Limit if records size exceeds limit
             if (mergeIndex >= maxRecordsDisplay) {
-                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.WARNING, 'Maximum records exceeded so loading a subset of the total merge candidates.  Try adding Filter by Contact or Filter by Rule criteria if you are having trouble finding a specific merge candidate.'));
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.WARNING, 'Maximum records exceeded so loading a subset of the total merge candidates.  Try adding Filter by Account or Filter by Rule criteria if you are having trouble finding a specific merge candidate.'));
                 break;
             }
         }
@@ -310,7 +304,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                 listRecord1.Id = mergeRecord.Account__c;
                 listRecord1.C501_Merge_Id__c = mergeRecord.Id;
                 listRecord1.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-                listRecord1.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
                 listRecord1.C501_Merge_Account__c = mergeRecord.Account__c;
                 listRecord1.C501_Merge_Target__c = mergeRecord.Merge_Target_Account__c;
                 listRecord1.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
@@ -323,7 +316,6 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                 listRecord2.Id = mergeRecord.Merge_Target_Account__c;
                 listRecord2.C501_Merge_Id__c = mergeRecord.Id;
                 listRecord2.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-                listRecord2.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
                 listRecord2.C501_Merge_Account__c = mergeRecord.Merge_Target_Account__c;
                 listRecord2.C501_Merge_Target__c = mergeRecord.Account__c;
                 listRecord2.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
@@ -387,9 +379,7 @@ public virtual without sharing class C501_CTRL_MassMergeAccounts {
                             Account__c = account.Id,
                             Merge_Target_Account__c = targetObject.Id,
                             Merge_Action__c = account.C501_Merge_Action__c,
-                            Merge_Metric__c = account.C501_Merge_Metric__c,
-                            // Set merge Confidence to 100% to ensure merge regardless of automerge percentage
-                            Merge_Confidence__c = 100.0
+                            Merge_Metric__c = account.C501_Merge_Metric__c
                         ));
                     }
                 }

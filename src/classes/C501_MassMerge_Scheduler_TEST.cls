@@ -69,9 +69,6 @@ class C501_MassMerge_Scheduler_TEST {
         }
         strSoql += ' AND Merge_Metric__r.Name LIKE \'TESTDATA%\'';
         strSoql += ' LIMIT 1';
-
-        //System.assert(
-        //    100.0 == Database.query(strSoql).Merge_Confidence__c);
     }
 
     @isTest(SeeAllData='true')

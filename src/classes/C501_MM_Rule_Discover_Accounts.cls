@@ -155,7 +155,7 @@ public class C501_MM_Rule_Discover_Accounts implements Schedulable {
         }
 
         List<Report> reports = [
-            SELECT Id, DeveloperName, FolderName, LastModifiedDate
+            SELECT Id, Name, DeveloperName, FolderName, LastModifiedDate
             FROM Report
             WHERE Id in :sourceReportIds OR DeveloperName in :sourceReportIds];
 

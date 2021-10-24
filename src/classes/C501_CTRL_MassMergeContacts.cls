@@ -75,9 +75,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
         if (!ListPartialContains(listStrFields, 'C501_Merge_Target__c')) {
             listStrFields.add('C501_Merge_Target__c');
         }
-        if (!ListPartialContains(listStrFields, 'C501_Merge_Confidence__c')) {
-            listStrFields.add('C501_Merge_Confidence__c');
-        }
     }   
     
     //
@@ -113,7 +110,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
     public List<SelectOption> listSOContacts {
         get {
             if (listSOContacts == null )
-                listSOContacts = c501MassMerge_SharedCode_Contact.listObjectsWithConfidence(objectFilter.C501_Merge_Rule__c, objectFilter.C501_Merge_Confidence_From__c, objectFilter.C501_Merge_Confidence_To__c);
+                listSOContacts = c501MassMerge_SharedCode_Contact.listObjects(objectFilter.C501_Merge_Rule__c);
 
             return listSOContacts;
         }
@@ -176,8 +173,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                 objectFilter = new Contact();
                 
                 objectFilter.C501_Merge_Rule__c = null;
-                objectFilter.C501_Merge_Confidence_From__c = 0.0;
-                objectFilter.C501_Merge_Confidence_To__c = 100.0;
             }
             return objectFilter;
         }
@@ -265,7 +260,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                 new C501_Contact_Merge__c(
                     Id = contactMerge.Id,
                     Merge_Action__c = contactMerge.Merge_Action__c,
-                    Merge_Confidence__c = null,
                     Contact__c = contactMerge.Contact__c,
                     Merge_Target_Contact__c = contactMerge.Merge_Target_Contact__c,
                     Merge_Metric__c = contactMerge.Merge_Metric__c,
@@ -316,7 +310,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                 listRecord1.Id = mergeRecord.Contact__c;
                 listRecord1.C501_Merge_Id__c = mergeRecord.Id;
                 listRecord1.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-                listRecord1.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
                 listRecord1.C501_Merge_Contact__c = mergeRecord.Contact__c;
                 listRecord1.C501_Merge_Target__c = mergeRecord.Merge_Target_Contact__c;
                 listRecord1.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
@@ -329,7 +322,6 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                 listRecord2.Id = mergeRecord.Merge_Target_Contact__c;
                 listRecord2.C501_Merge_Id__c = mergeRecord.Id;
                 listRecord2.C501_Merge_Action__c = mergeRecord.Merge_Action__c;
-                listRecord2.C501_Merge_Confidence__c = mergeRecord.Merge_Confidence__c;
                 listRecord2.C501_Merge_Contact__c = mergeRecord.Merge_Target_Contact__c;
                 listRecord2.C501_Merge_Target__c = mergeRecord.Contact__c;
                 listRecord2.C501_Merge_Metric_Name__c = mergeRecord.Merge_Metric_Name__c;
@@ -395,9 +387,7 @@ public virtual without sharing class C501_CTRL_MassMergeContacts {
                             Contact__c = contact.Id,
                             Merge_Target_Contact__c = targetObject.Id,
                             Merge_Action__c = contact.C501_Merge_Action__c,
-                            Merge_Metric__c = contact.C501_Merge_Metric__c,
-                            // Set merge Confidence to 100% to ensure merge regardless of automerge percentage
-                            Merge_Confidence__c = 100.0
+                            Merge_Metric__c = contact.C501_Merge_Metric__c
                         ));
 
                         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_CTRL_MassMergeContacts::SaveContacts master listContactsMergesMaster: ' + listContactsMergesMaster);

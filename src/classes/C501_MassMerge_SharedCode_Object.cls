@@ -126,8 +126,6 @@ public without sharing class C501_MassMerge_SharedCode_Object {
             if (mergeMetrics.isEmpty()) {
                 mergeMetrics.add( new C501_Merge_Metric__c (
                     Name = (Test.isRunningTest() ? ('TESTDATA ' + mergeMetricName) : mergeMetricName),
-                    Confidence__c = 90.0,
-                    AutoMerge_Percentage__c = 100.0,
                     AutoMerge_Objects__c = C501_MassMerge_SharedCode.MergeObjectScenarios.Account.name(),
                     Source_Report__c = 'Merge_Rule_Household_No_Contacts',
                     Source_Object__c = 'Account',
@@ -216,7 +214,6 @@ public without sharing class C501_MassMerge_SharedCode_Object {
                     String uniqueId = mergeMetrics[0].Name + maxId + minId;
                     npspHouseholdMergeInserts.put(uniqueId, new C501_Account_Merge__c(
                         Unique_Id__c = uniqueId,
-                        Merge_Confidence__c = mergeMetrics[0].Confidence__c,
                         Account__c = masterNPSPHoouseholdId,
                         Merge_Target_Account__c = npspHouseholdId,
                         Merge_Metric__c = mergeMetrics[0].Id

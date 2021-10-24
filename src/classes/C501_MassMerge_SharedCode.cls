@@ -164,6 +164,11 @@ public without sharing class C501_MassMerge_SharedCode {
             return false;
         }
 
+        // Ignore Duplicate Value on Unique_Id__c because just inserting and using DB to filter what is already in the table
+        if (resultError.getMessage().containsIgnoreCase('DUPLICATE_VALUE') && resultError.getMessage().containsIgnoreCase('Unique_Id__c')) {
+            return false;
+        }
+
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, '***** ' + callingMethod + ' Database.SaveResult Error');
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, statusCode + ': ' + resultError.getMessage());
         C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.ERROR, 'Fields that affected this error: ' + resultError.getFields());
@@ -368,10 +373,10 @@ public without sharing class C501_MassMerge_SharedCode {
         }
 
         String strSoql = 'SELECT';
-        strSoql += ' Id, Name, Confidence__c,';
+        strSoql += ' Id, Name,';
         strSoql += ' Total_Unassigned_Accounts__c, Total_Unassigned_Contacts__c,';
         strSoql += ' Source_Report__c, Source_Report_LastModifiedDate__c, Source_Object__c, Source_Object_Account_Id__c, Source_Object_Contact_Id__c,';
-        strSoql += ' AutoMerge_Percentage__c, AutoMerge_Objects__c,';
+        strSoql += ' AutoMerge_Objects__c,';
         strSoql += ' Last_Discover_Date__c, Last_ContactsAccount_Discover_Date__c, Last_ContactsAccounts_Discover_Date__c, Last_Merge_Date__c,';
         strSoql += ' Last_Account_Discover_GroupByHavingCount__c, Last_Contact_Discover_GroupByHavingCount__c,Last_ContactsAcross_Discover_HavingCount__c,';
         strSoql += ' Discovery_Objects__c';
@@ -396,7 +401,7 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Id, Unique_Id__c,';
         strSoql += ' Account__c, Account__r.IsDeleted,';
         strSoql += ' Merge_Target_Account__c, Merge_Target_Account__r.IsDeleted,';
-        strSoql += ' Merge_Confidence__c, Merge_Action__c,';
+        strSoql += ' Merge_Action__c,';
         strSoql += ' Merge_Metric__c, Merge_Metric__r.Name';
         strSoql += ' FROM C501_Account_Merge__c';
         strSoql += ' WHERE isDeleted = false';
@@ -436,7 +441,7 @@ public without sharing class C501_MassMerge_SharedCode {
         strSoql += ' Id, Unique_Id__c,';
         strSoql += ' Contact__c, Contact__r.AccountId, Contact__r.Name, Contact__r.IsDeleted,';
         strSoql += ' Merge_Target_Contact__c, Merge_Target_Contact__r.AccountId, Merge_Target_Contact__r.Name, Merge_Target_Contact__r.IsDeleted,';
-        strSoql += ' Merge_Confidence__c, Merge_Action__c,';
+        strSoql += ' Merge_Action__c,';
         strSoql += ' Merge_Metric__c, Merge_Metric__r.Name';
         strSoql += ' FROM C501_Contact_Merge__c';
         strSoql += ' WHERE isDeleted = false';
@@ -488,12 +493,10 @@ public without sharing class C501_MassMerge_SharedCode {
 
                     mergeMetricsInsert.add( new C501_Merge_Metric__c (
                         Name = (Test.isRunningTest() ? ('TESTDATA ' + report.Name) : report.Name),
-                        Confidence__c = 90.0,
-                        Source_Report__c = report.DeveloperName,
+                        Source_Report__c = report.Id,
                         Source_Object__c = (report.DeveloperName.contains('Account') ? 'Account' : 'Contact'),
                         Source_Object_Account_Id__c = (report.DeveloperName.contains('Account') ? 'Id' : 'AccountId'),
                         Source_Object_Contact_Id__c = (report.DeveloperName.contains('Contact') ? 'Id' : 'Id'),
-                        AutoMerge_Percentage__c = 100.0,
                         Unique_Id__c = report.Id
                     ));
                 }

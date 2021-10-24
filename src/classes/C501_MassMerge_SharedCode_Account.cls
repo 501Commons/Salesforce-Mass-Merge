@@ -118,11 +118,9 @@ public without sharing class C501_MassMerge_SharedCode_Account {
     }
 
     // the list of Accounts
-    public List<SelectOption> ListObjectsWithConfidence(String mergeRule, Decimal fromMergeConfidence, Decimal toMergeConfidence) {
+    public List<SelectOption> ListObjects(String mergeRule) {
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ListObjectsWithConfidence - mergeRule: ' + mergeRule 
-            + ' fromMergeConfidence: ' + fromMergeConfidence.toPlainString()
-            + ' toMergeConfidence: ' + toMergeConfidence.toPlainString());
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** C501_MassMerge_SharedCode_Account::ListObjects - mergeRule: ' + mergeRule);
 
         Map<String, SelectOption> mapSelectOption = new Map<String, SelectOption>();
         mapSelectOption.put('', new SelectOption('', ''));
@@ -136,7 +134,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
         }
 
         String strSoqlSelect = 'SELECT Account__r.Name, Merge_Target_Account__r.Name';
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjects strSoql: ' + strSoqlSelect + strSoqlFrom + strSoqlWhere);
         for (C501_Account_Merge__c mergeRecord : Database.query(strSoqlSelect + strSoqlFrom + strSoqlWhere)) {
 
             if (mapSelectOption.size() > C501_MassMerge_SharedCode.MAXIMUM_COLLECTION_SIZE) {
@@ -151,7 +149,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             }
             catch(Exception ex) {
 
-                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence Invalid Lookup values to skip - ' + ex.getMessage());
+                C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjects Invalid Lookup values to skip - ' + ex.getMessage());
                 continue;
             }
 
@@ -164,7 +162,7 @@ public without sharing class C501_MassMerge_SharedCode_Account {
                 new SelectOption(mergeRecord.Merge_Target_Account__r.Name, mergeRecord.Merge_Target_Account__r.Name));
         }
 
-        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjectsWithConfidence mapSelectOption: ' + mapSelectOption);
+        C501_MassMerge_SharedCode.OutputDebugLogText(LoggingLevel.DEBUG, '***** ' + String.valueOf(this).substring(0,String.valueOf(this).indexOf(':')) + '::ListObjects mapSelectOption: ' + mapSelectOption);
 
         List<SelectOption> listSOSorted = new List<SelectOption>();
         listSOSorted = C501_MassMerge_SharedCode.SelectOptionSortByLabel(mapSelectOption.values());
@@ -478,12 +476,6 @@ public without sharing class C501_MassMerge_SharedCode_Account {
             //      Step 2: Merge the duplicate into the master (thus deleting the duplicate)
             //      Step 3: Attempt to update unique values on the master
             if (fResult.isUpdateable() && fResult.isAccessible() && !C501_MassMerge_SharedCode.isNPSPHiddenField(fieldname)) {
-
-                // Special check issue related to Gender__c vs c501mm__Gender__c appears to be same field so throws a Duplicate Set exception when updating record
-                //  Real fix is to remove the Gender__c from the package but need to work with Salesforce support to remove objects/fields from a managed package
-                if (fieldName.toLowerCase().contains('gender__c')) {
-                    continue;
-                }
 
                 // If the field is type lookup, then ignore in the merge fields because is handled during the object merge
                 string relName = fResult.getRelationshipName();

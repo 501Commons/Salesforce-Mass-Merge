@@ -64,8 +64,7 @@ public class C501_MM_ListView_ContactM_CTRL_TEST {
                 Unique_Id__c = 'TESTDATA Name ' + listContacts[0].Id,
                 Merge_Metric__c = mergeMetrics[0].Id,
                 Contact__c = listContacts[0].Id,
-                Merge_Target_Contact__c = listContacts[1].Id,
-                Merge_Confidence__c = 100.0);
+                Merge_Target_Contact__c = listContacts[1].Id);
 
         insert objectMerge;
 
