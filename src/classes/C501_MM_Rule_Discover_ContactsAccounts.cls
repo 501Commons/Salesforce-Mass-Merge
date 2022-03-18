@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2019, 501Commons.org
+    Nonprofit Salesforce © 2022 by 501 Commons is licensed under CC BY 4.0
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
